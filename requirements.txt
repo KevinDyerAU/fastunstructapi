@@ -1,1 +1,7 @@
 fastapi[all]
+
+unstructured-ingest
+unstructured-ingest[remote]
+unstructured-ingest[s3]
+unstructured-ingest[pdf]
+unstructured-ingest[docx]
