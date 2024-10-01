@@ -1,4 +1,4 @@
-# from typing import Optional
+
 import os
 
 from unstructured_ingest.v2.pipeline.pipeline import Pipeline
@@ -18,40 +18,40 @@ from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     S3UploaderConfig
 )
 
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
+from pydantic import BaseModel
 
 app = FastAPI()
 
+class FileCreate(BaseModel):
+    fileName: str
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
 
-# async def read_item(folder: str):
-#     background_tasks.add_task(process_files, folder)
-#     background_tasks.add_task(startPipeline, folder)
-#     return {"message": "File processing started"}
-
-# def process_files(folder: str):
-#     # Simulate image processing
-#     time.sleep(2)
-#     # Actual file processing would go here
-#     print(f"Processed files "+folder)
-
-# @app.post("/process-async")
-# async def process_async(folder: str, background_tasks: BackgroundTasks):
-#     background_tasks.add_task(process_files, folder)
-#     background_tasks.add_task(startPipeline, folder)
-#     return {"message": "File processing started"}
-
 # Chunking and embedding are optional.
 @app.get("/folder/{folder}")
+async def start_processing(folder: str, background_tasks: BackgroundTasks):
+    background_tasks.add_task(startPipeline, folder)
+    return {"message": "File processing started"}
+
+
+@app.post("/process_file/")
+async def process_file(file_data: FileCreate, background_tasks: BackgroundTasks):
+    fileName = file_data.fileName
+    background_tasks.add_task(startPipeline, fileName)
+    return {"message": "File processing started"}
+
+
+
 def startPipeline(folder: str):
     Pipeline.from_configs(
         context=ProcessorConfig(),
-        indexer_config=S3IndexerConfig(remote_url='s3://smartrtobucket/'+folder),
-        downloader_config=S3DownloaderConfig(download_dir="/work"),
+        #indexer_config=S3IndexerConfig(remote_url='s3://smartrtobucket/SmartRTO/'+folder+"/"),
+        indexer_config=S3IndexerConfig(remote_url=folder),
+        downloader_config=S3DownloaderConfig(),
         source_connection_config=S3ConnectionConfig(
             access_config=S3AccessConfig(
                 key=os.getenv('AWS_S3_KEY'),
@@ -77,6 +77,7 @@ def startPipeline(folder: str):
                 secret=os.getenv('AWS_S3_SECRET')
             )
         ),
-        uploader_config=S3UploaderConfig(remote_url='s3://smartrtobucket/'+folder)
+        #uploader_config=S3UploaderConfig(remote_url='s3://smartrtobucket/'+folder)
+        uploader_config=S3UploaderConfig(remote_url=folder)
     ).run()
-    return {"message": "File processing started"}
+    
