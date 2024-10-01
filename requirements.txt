@@ -3,6 +3,7 @@ fastapi[all]
 Flask
 Gunicorn
 
+unstructured
 unstructured-ingest
 unstructured-ingest[remote]
 unstructured-ingest[s3]
