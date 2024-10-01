@@ -23,26 +23,29 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-class FileCreate(BaseModel):
+class FileProcess(BaseModel):
     fileName: str
 
 @app.get("/")
-async def root():
+def root():
     return {"message": "Hello World"}
 
 
 # Chunking and embedding are optional.
-@app.get("/folder/{folder}")
-async def start_processing(folder: str, background_tasks: BackgroundTasks):
-    background_tasks.add_task(startPipeline, folder)
-    return {"message": "File processing started"}
 
 
-@app.post("/process_file/")
-async def process_file(file_data: FileCreate, background_tasks: BackgroundTasks):
+
+# @app.post("/process_folder/")
+# async def process_folder(file_data: FileProcess, background_tasks: BackgroundTasks):
+#     fileName = file_data.fileName
+#     background_tasks.add_task(startPipeline, fileName)
+#     return {"message": "File processing started"}
+
+@app.post("/process_folder/")
+def process_folder(file_data: FileProcess):
     fileName = file_data.fileName
-    background_tasks.add_task(startPipeline, fileName)
-    return {"message": "File processing started"}
+    startPipeline(fileName)
+    return {"message": "File processing completed"}
 
 
 
