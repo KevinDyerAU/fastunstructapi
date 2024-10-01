@@ -1,5 +1,8 @@
 fastapi[all]
 
+Flask
+Gunicorn
+
 unstructured-ingest
 unstructured-ingest[remote]
 unstructured-ingest[s3]

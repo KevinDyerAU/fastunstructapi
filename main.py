@@ -18,17 +18,32 @@ from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     S3UploaderConfig
 )
 
-from fastapi import FastAPI, BackgroundTasks
+# from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
 
-app = FastAPI()
+# app = FastAPI()
+# @app.get("/")
+# def root():
+#     return {"message": "Hello World"}
+
+from flask import Flask,request
+app = Flask(__name__)
+
+@app.route('/')
+def hello_world():
+    return 'Hello, World!'
+
+@app.route('/guide', methods=["POST"])
+def process_folder():
+    folder = request.json['folder']
+    startPipeline(folder)
+    return {"message": "File processing completed"}
+
 
 class FileProcess(BaseModel):
     fileName: str
 
-@app.get("/")
-def root():
-    return {"message": "Hello World"}
+
 
 
 # Chunking and embedding are optional.
@@ -41,11 +56,11 @@ def root():
 #     background_tasks.add_task(startPipeline, fileName)
 #     return {"message": "File processing started"}
 
-@app.post("/process_folder/")
-def process_folder(file_data: FileProcess):
-    fileName = file_data.fileName
-    startPipeline(fileName)
-    return {"message": "File processing completed"}
+# @app.post("/process_folder/")
+# def process_folder(file_data: FileProcess):
+#     fileName = file_data.fileName
+#     startPipeline(fileName)
+#     return {"message": "File processing completed"}
 
 
 
