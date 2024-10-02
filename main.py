@@ -1,4 +1,4 @@
-import os
+
 
 from unstructured_ingest.v2.pipeline.pipeline import Pipeline
 from unstructured_ingest.v2.interfaces import ProcessorConfig
@@ -17,12 +17,11 @@ from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     S3UploaderConfig
 )
 
-from crypt import methods
+
 from flask import Flask,jsonify,request
 
 app = Flask(__name__)
 
-from pydantic import BaseModel
 
 
 @app.route("/")
@@ -86,5 +85,5 @@ async def startPipeline(folder: str, awsK: str, awsS: str, unstK: str):
     ).run()
     
 
-if __name__=="__main__":
-    app.run(debug=True,host="0.0.0.0",port=8080)
+# if __name__=="__main__":
+#     app.run(debug=True,host="0.0.0.0",port=8080)
