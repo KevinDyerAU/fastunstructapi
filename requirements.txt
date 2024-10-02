@@ -1,10 +1,6 @@
-fastapi[all]
+flask
+flask[async]
 
-Flask
-Gunicorn
-
-uvloop
-unstructured-ingest
 unstructured-ingest[remote]
 unstructured-ingest[s3]
 unstructured-ingest[pdf]
