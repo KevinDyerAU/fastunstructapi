@@ -41,7 +41,7 @@ async def access():
     fileName = data.get("fileName")
     awsK = data.get("awsK")
     awsS = data.get("awsS")
-    unstrK = data.get("unstrK"),
+    unstrK = data.get("unstrK")
     supaK = data.get("supaK")
 
 

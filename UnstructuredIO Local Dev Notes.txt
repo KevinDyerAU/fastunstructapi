@@ -48,7 +48,7 @@ pip install "flask[async]" --break-system-packages
 ##---------------------------------------------------------------------------------------------------------------------------------------
 2. main.py
 ##---------------------------------------------------------------------------------------------------------------------------------------
-This I used to run locally. Make sure to change the flask port, 80 gives permission denied.
+This I used to run and imported by wsgi on Render for Prod. Make sure to change the flask port, 80 gives permission denied.
 
 if __name__=="__main__":
     app.run(debug=True,host="0.0.0.0",port=8080)
@@ -62,12 +62,12 @@ How to run:
 Use Postman to run the POST on localhost.
 
 ##---------------------------------------------------------------------------------------------------------------------------------------
-3. app.py & wsgi.py
+3. wsgi.py
 ##---------------------------------------------------------------------------------------------------------------------------------------
 this file is referenced in the Docker for for the install on Render
 
 Render uses render.yaml to create blueprint
 
-startup file is wsgi ---> prod server which loads the app.py file
+startup file is wsgi ---> prod server which loads the main.py file
 
 
