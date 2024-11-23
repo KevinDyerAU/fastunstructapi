@@ -1,6 +1,3 @@
-
-import os
-
 from unstructured_ingest.v2.pipeline.pipeline import Pipeline
 from unstructured_ingest.v2.interfaces import ProcessorConfig
 from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
@@ -11,11 +8,12 @@ from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
 )
 from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
 from unstructured_ingest.v2.processes.chunker import ChunkerConfig
-# from unstructured_ingest.v2.processes.embedder import EmbedderConfig
+from unstructured_ingest.v2.processes.embedder import EmbedderConfig
 from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     S3ConnectionConfig,
     S3AccessConfig
 )
+
 
 from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     PostgresConnectionConfig,
@@ -24,34 +22,40 @@ from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     PostgresUploadStagerConfig
 )
 
-from pydantic import BaseModel
+from flask import Flask,jsonify,request
 
-
-from flask import Flask,request
 app = Flask(__name__)
 
-@app.route('/')
-def hello_world():
-    return 'Hello, World!'
-
-@app.route('/process', methods=["POST"])
-def process():
-    folder = request.json['folder']
-    startPipeline(folder)
-    return {"message": "File processing completed"}
 
 
-class FileProcess(BaseModel):
-    fileName: str
-
-
+@app.route("/")
+def root():
+    return jsonify({
+        "Message": "app up and running successfully"
+    })
 
 
 # Chunking and embedding are optional.
+@app.route("/access",methods=["POST"])
+async def access():
+    data = request.get_json()
+    fileName = data.get("fileName")
+    awsK = data.get("awsK")
+    awsS = data.get("awsS")
+    unstrK = data.get("unstrK")
+
+
+    await startPipeline(fileName, awsK, awsS, unstrK)
+
+    message = f"Filename {fileName} received and processed"
+
+    return jsonify({
+        "Message": message
+    })
 
 
 
-def startPipeline(folder: str):
+async def startPipeline(folder: str, awsK: str, awsS: str, unstK: str):
     # Specify which fields to output in the processed data. This can help prevent
     # database record insert issues, where a particular field in the processed data
     # does not match a column in the database table on insert.
@@ -68,20 +72,19 @@ def startPipeline(folder: str):
 
     Pipeline.from_configs(
         context=ProcessorConfig(),
-        #indexer_config=S3IndexerConfig(remote_url='s3://smartrtobucket/SmartRTO/'+folder+"/"),
         indexer_config=S3IndexerConfig(remote_url=folder),
         downloader_config=S3DownloaderConfig(),
         source_connection_config=S3ConnectionConfig(
             access_config=S3AccessConfig(
-                key=os.getenv('AWS_S3_KEY'),
-                secret=os.getenv('AWS_S3_SECRET')
+                key=awsK,
+                secret=awsS
             )
         ),
         partitioner_config=PartitionerConfig(
             partition_by_api=True,
-            api_key=os.getenv('UNSTRUCT_API_KEY'),
+            api_key=unstK,
             partition_endpoint='https://api.unstructuredapp.io/general/v0/general',
-            strategy="hi_res",
+            strategy="auto",
             additional_partition_args={
                 "split_pdf_page": True,
                 "split_pdf_allow_failed": True,
@@ -90,6 +93,11 @@ def startPipeline(folder: str):
         ),
 
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
+        # embedder_config=EmbedderConfig(
+        #     embedding_provider="openai",
+
+        #     embedding_model="text-embedding-ada-002",
+        # ),
         destination_connection_config=PostgresConnectionConfig(
             access_config=PostgresAccessConfig(password='xxx'),
             host='aws-0-ap-southeast-2.pooler.supabase.com',
@@ -99,5 +107,9 @@ def startPipeline(folder: str):
         ),
         stager_config=PostgresUploadStagerConfig(),
         uploader_config=PostgresUploaderConfig()
+
+
     ).run()
-    
+
+if __name__=="__main__":
+    app.run(debug=True,host="0.0.0.0",port=8080)

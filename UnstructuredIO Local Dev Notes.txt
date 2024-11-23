@@ -1,0 +1,73 @@
+#################################
+##UnstructuredIO Build Notes
+#################################
+
+##---------------------------------------------------------------------------------------------------------------------------------------
+Introduction
+##---------------------------------------------------------------------------------------------------------------------------------------
+
+Notes on how to run the local pythin code for Unstructured client and flask as a api framework. 
+Gunicorn to help with Prod web server.
+
+flask
+flask[async]
+
+Gunicorn
+
+unstructured-ingest[remote]
+unstructured-ingest[s3]
+unstructured-ingest[pdf]
+unstructured-ingest[docx]
+
+##---------------------------------------------------------------------------------------------------------------------------------------
+1. WSL
+##---------------------------------------------------------------------------------------------------------------------------------------
+start in windows WSL
+	default is Ubuntu
+
+1.1) Make sure pip is installed
+	sudo apt-get update
+	sudo apt install -y python3-pip
+
+install dependencies i.e. 
+
+pip install "pinecone-client[grpc]" --break-system-packages
+
+pip install "unstructured-ingest[remote]" --break-system-packages
+pip install "unstructured-ingest[s3]" --break-system-packages
+pip install "unstructured-ingest[pdf]" --break-system-packages
+pip install "unstructured-ingest[docx]" --break-system-packages
+pip install "unstructured-ingest[pinecone]" --break-system-packages
+pip install "unstructured-ingest[postgres]" --break-system-packages
+pip install "unstructured-ingest[openai]" --break-system-packages
+
+pip install "flask" --break-system-packages
+pip install "flask[async]" --break-system-packages
+
+
+##---------------------------------------------------------------------------------------------------------------------------------------
+2. main.py
+##---------------------------------------------------------------------------------------------------------------------------------------
+This I used to run locally. Make sure to change the flask port, 80 gives permission denied.
+
+if __name__=="__main__":
+    app.run(debug=True,host="0.0.0.0",port=8080)
+# if __name__ == "__main__":
+#     app.run(host='0.0.0.0',port=80)
+
+How to run:
+	navigate to the /mnt/c/myprojects/fastunstructapi folder
+	run this command: python3 main.py
+
+Use Postman to run the POST on localhost.
+
+##---------------------------------------------------------------------------------------------------------------------------------------
+3. app.py & wsgi.py
+##---------------------------------------------------------------------------------------------------------------------------------------
+this file is referenced in the Docker for for the install on Render
+
+Render uses render.yaml to create blueprint
+
+startup file is wsgi ---> prod server which loads the app.py file
+
+

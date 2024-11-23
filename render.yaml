@@ -1,9 +1,12 @@
+# Exported from Render on 2024-11-23T04:03:01Z
 services:
-  # A Docker web service
-  - type: web
-    name: fastapi-example
-    runtime: python
-    plan: free
-    autoDeploy: false
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+- type: web
+  name: fastunstructpostgres
+  runtime: python
+  repo: https://github.com/KevinDyerAU/fastunstructapi
+  plan: starter
+  region: singapore
+  buildCommand: pip install -r requirements.txt
+  startCommand: gunicorn wsgi:app --timeout 240
+  autoDeploy: false
+version: "1"

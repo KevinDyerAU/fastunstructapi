@@ -1,0 +1,195 @@
+##---------------------------------------------------------------------------------------------------------------------------------------
+Postgres Setup
+##---------------------------------------------------------------------------------------------------------------------------------------
+pip install "unstructured-ingest[postgres]"
+
+CREATE EXTENSION vector;
+
+CREATE TABLE public.elements
+(
+    id uuid NOT NULL,
+    element_id character varying COLLATE pg_catalog."default",
+    text text COLLATE pg_catalog."default",
+    embeddings vector(1536),
+    parent_id character varying COLLATE pg_catalog."default",
+    page_number integer,
+    is_continuation boolean,
+    orig_elements text COLLATE pg_catalog."default",
+    type text COLLATE pg_catalog."default",
+    filetype text COLLATE pg_catalog."default",
+    languages text COLLATE pg_catalog."default",
+    filename text COLLATE pg_catalog."default",
+    url text COLLATE pg_catalog."default",
+    version text COLLATE pg_catalog."default",
+    record_locator text COLLATE pg_catalog."default",
+    system text COLLATE pg_catalog."default",
+    layout_width text COLLATE pg_catalog."default",
+    layout_height text COLLATE pg_catalog."default",
+    points text COLLATE pg_catalog."default",
+    date_created text COLLATE pg_catalog."default",
+    date_modified text COLLATE pg_catalog."default",
+    date_processed text COLLATE pg_catalog."default",
+    permissions_data text COLLATE pg_catalog."default",
+    category_depth text COLLATE pg_catalog."default",
+    attached_filename text COLLATE pg_catalog."default",
+    last_modified text COLLATE pg_catalog."default",
+    file_directory text COLLATE pg_catalog."default",
+    page_name text COLLATE pg_catalog."default",
+    link_urls text COLLATE pg_catalog."default",
+    link_texts text COLLATE pg_catalog."default",
+    sent_from text COLLATE pg_catalog."default",
+    sent_to text COLLATE pg_catalog."default",
+    subject text COLLATE pg_catalog."default",
+    section text COLLATE pg_catalog."default",
+    header_footer_type text COLLATE pg_catalog."default",
+    emphasized_text_contents text COLLATE pg_catalog."default",
+    emphasized_text_tags text COLLATE pg_catalog."default",
+    text_as_html text COLLATE pg_catalog."default",
+    regex_metadata text COLLATE pg_catalog."default",
+    detection_class_prob text COLLATE pg_catalog."default",
+    record_id character varying COLLATE pg_catalog."default",
+    CONSTRAINT elements_pkey PRIMARY KEY (id)
+)
+
+
+
+-- Enable the pgvector extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Create or replace the function to search for elements
+CREATE OR REPLACE FUNCTION match_elements (
+  query_embedding vector(1536),
+  match_threshold float,
+  match_count int DEFAULT null,
+  filename_filter text DEFAULT null,
+  url_filter text DEFAULT null
+) RETURNS TABLE (
+  id uuid,
+  element_id varchar,
+  text text,
+  embeddings vector(1536),
+  parent_id varchar,
+  page_number integer,
+  is_continuation boolean,
+  orig_elements text,
+  type text,
+  filetype text,
+  languages text,
+  filename text,
+  url text,
+  version text,
+  record_locator text,
+  system text,
+  layout_width text,
+  layout_height text,
+  points text,
+  date_created text,
+  date_modified text,
+  date_processed text,
+  permissions_data text,
+  category_depth text,
+  attached_filename text,
+  last_modified text,
+  file_directory text,
+  page_name text,
+  link_urls text,
+  link_texts text,
+  sent_from text,
+  sent_to text,
+  subject text,
+  section text,
+  header_footer_type text,
+  emphasized_text_contents text,
+  emphasized_text_tags text,
+  text_as_html text,
+  regex_metadata text,
+  detection_class_prob text,
+  record_id varchar,
+  similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    id,
+    element_id,
+    text,
+    embeddings,
+    parent_id,
+    page_number,
+    is_continuation,
+    orig_elements,
+    type,
+    filetype,
+    languages,
+    filename,
+    url,
+    version,
+    record_locator,
+    system,
+    layout_width,
+    layout_height,
+    points,
+    date_created,
+    date_modified,
+    date_processed,
+    permissions_data,
+    category_depth,
+    attached_filename,
+    last_modified,
+    file_directory,
+    page_name,
+    link_urls,
+    link_texts,
+    sent_from,
+    sent_to,
+    subject,
+    section,
+    header_footer_type,
+    emphasized_text_contents,
+    emphasized_text_tags,
+    text_as_html,
+    regex_metadata,
+    detection_class_prob,
+    record_id,
+    1 - (elements.embeddings <=> query_embedding) AS similarity
+  FROM elements
+  WHERE 
+	documents.embedding <=> query_embedding < 1 - match_threshold
+	AND (filename_filter IS NULL OR filename = filename_filter)
+    AND (url_filter IS NULL OR url = url_filter)
+  ORDER BY elements.embeddings <=> query_embedding
+  LIMIT match_count;
+END;
+$$;
+
+###-----------------------------------------------------------------------
+pgvector introduces 3 new operators that can be used to calculate similarity:
+###-----------------------------------------------------------------------
+
+Operator	Description
+<->	Euclidean distance
+<#>	negative inner product
+<=>	cosine distance
+OpenAI recommends cosine similarity on their embeddings, so we will use that here.
+
+###-----------------------------------------------------------------------
+Indexing#
+###-----------------------------------------------------------------------
+Once your table starts to grow with embeddings, you will likely want to add an index to speed up queries. Vector indexes are particularly important when you're ordering results because vectors are not grouped by similarity, so finding the closest by sequential scan is a resource-intensive operation.
+
+Each distance operator requires a different type of index. We expect to order by cosine distance, so we need vector_cosine_ops index. A good starting number of lists is 4 * sqrt(table_rows):
+
+-----------------------------------------------------------------------
+create index on elements using ivfflat (embeddings vector_cosine_ops)
+with
+  (lists = 100);
+
+
+##---------------------------------------------------------------------------------------------------------------------------------------
+Postgres Setup
+##---------------------------------------------------------------------------------------------------------------------------------------
+
+pip install "supabase" --break-system-packages
+

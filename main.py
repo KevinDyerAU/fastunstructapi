@@ -1,5 +1,3 @@
-
-
 from unstructured_ingest.v2.pipeline.pipeline import Pipeline
 from unstructured_ingest.v2.interfaces import ProcessorConfig
 from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
@@ -13,10 +11,15 @@ from unstructured_ingest.v2.processes.chunker import ChunkerConfig
 # from unstructured_ingest.v2.processes.embedder import EmbedderConfig
 from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
     S3ConnectionConfig,
-    S3AccessConfig,
-    S3UploaderConfig
+    S3AccessConfig
 )
 
+from unstructured_ingest.v2.processes.connectors.sql.postgres import (
+    PostgresConnectionConfig,
+    PostgresAccessConfig,
+    PostgresUploaderConfig,
+    PostgresUploadStagerConfig
+)
 
 from flask import Flask,jsonify,request
 
@@ -38,10 +41,11 @@ async def access():
     fileName = data.get("fileName")
     awsK = data.get("awsK")
     awsS = data.get("awsS")
-    unstrK = data.get("unstrK")
+    unstrK = data.get("unstrK"),
+    supaK = data.get("supaK")
 
 
-    await startPipeline(fileName, awsK, awsS, unstrK)
+    await startPipeline(fileName, awsK, awsS, unstrK, supaK)
 
     message = f"Filename {fileName} received and processed"
 
@@ -51,7 +55,21 @@ async def access():
 
 
 
-async def startPipeline(folder: str, awsK: str, awsS: str, unstK: str):
+async def startPipeline(folder: str, awsK: str, awsS: str, unstK: str, supaK: str):
+    # Specify which fields to output in the processed data. This can help prevent
+    # database record insert issues, where a particular field in the processed data
+    # does not match a column in the database table on insert.
+    metadata_includes = [
+        "id", "element_id", "text", "embeddings", "type", "system", "layout_width",
+        "layout_height", "points", "url", "version", "date_created", "date_modified",
+        "date_processed", "permissions_data", "record_locator", "category_depth",
+        "parent_id", "attached_filename", "filetype", "last_modified", "file_directory",
+        "filename", "languages", "page_number", "links", "page_name", "link_urls",
+        "link_texts", "sent_from", "sent_to", "subject", "section", "header_footer_type",
+        "emphasized_text_contents", "emphasized_text_tags", "text_as_html", "regex_metadata",
+        "detection_class_prob"
+    ]
+
     Pipeline.from_configs(
         context=ProcessorConfig(),
         indexer_config=S3IndexerConfig(remote_url=folder),
@@ -75,13 +93,15 @@ async def startPipeline(folder: str, awsK: str, awsS: str, unstK: str):
         ),
 
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
-        destination_connection_config=S3ConnectionConfig(
-            access_config=S3AccessConfig(
-                key=awsK,
-                secret=awsS
-            )
+        destination_connection_config=PostgresConnectionConfig(
+            access_config=PostgresAccessConfig(password=supaK),
+            host='aws-0-ap-southeast-2.pooler.supabase.com',
+            port='6543',
+            username='postgres.nwwqkubrlvmrycubylso',
+            database='postgres'
         ),
-        uploader_config=S3UploaderConfig(remote_url=folder)
+        stager_config=PostgresUploadStagerConfig(),
+        uploader_config=PostgresUploaderConfig()
     ).run()
     
 
