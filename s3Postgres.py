@@ -43,9 +43,10 @@ async def access():
     awsK = data.get("awsK")
     awsS = data.get("awsS")
     unstrK = data.get("unstrK")
+    supaK = data.get("supaK")
 
 
-    await startPipeline(fileName, awsK, awsS, unstrK)
+    await startPipeline(fileName, awsK, awsS, unstrK, supaK)
 
     message = f"Filename {fileName} received and processed"
 
@@ -55,7 +56,7 @@ async def access():
 
 
 
-async def startPipeline(folder: str, awsK: str, awsS: str, unstK: str):
+async def startPipeline(folder: str, awsK: str, awsS: str, unstK: str, supaK: str):
     # Specify which fields to output in the processed data. This can help prevent
     # database record insert issues, where a particular field in the processed data
     # does not match a column in the database table on insert.
@@ -95,11 +96,11 @@ async def startPipeline(folder: str, awsK: str, awsS: str, unstK: str):
         chunker_config=ChunkerConfig(chunking_strategy="by_title"),
         # embedder_config=EmbedderConfig(
         #     embedding_provider="openai",
-
+           
         #     embedding_model="text-embedding-ada-002",
         # ),
         destination_connection_config=PostgresConnectionConfig(
-            access_config=PostgresAccessConfig(password='xxx'),
+            access_config=PostgresAccessConfig(password=supaK),
             host='aws-0-ap-southeast-2.pooler.supabase.com',
             port='6543',
             username='postgres.nwwqkubrlvmrycubylso',
