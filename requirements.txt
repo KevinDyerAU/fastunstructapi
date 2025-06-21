@@ -1,16 +1,21 @@
 Flask==3.0.0
-Flask-Cors==4.0.0
-Flask-Pydantic-Spec==0.8.5
+Flask[async]==3.0.0
 
 Gunicorn==21.2.0
 
-unstructured-ingest[remote,s3,pdf,docx,postgres]==1.0.41
+unstructured-ingest[remote]==1.0.41
+unstructured-ingest[s3]==1.0.41
+unstructured-ingest[pdf]==1.0.41
+unstructured-ingest[docx]==1.0.41
+unstructured-ingest[pinecone]==1.0.41
+unstructured-ingest[postgres]==1.0.41
+unstructured-ingest[openai]==1.0.41
 
-boto3
+boto3==1.34.21
 
-pydantic-settings
-python-dotenv
+pydantic-settings==2.6.0
+python-dotenv==1.0.0
 
-logging
+logging==0.5.1.2
 
-uvicorn
+uvicorn==0.27.0

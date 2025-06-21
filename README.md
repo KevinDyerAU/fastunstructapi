@@ -60,7 +60,15 @@ To deploy this application on Render:
      - Key: `PYTHON_VERSION`
      - Value: `3.11.9`
 
+7. Set the port configuration:
+   - Go to the Environment Variables section
+   - Add a new environment variable:
+     - Key: `PORT`
+     - Value: `8080` (or any other port number you prefer)
+
 Note: The application requires Python 3.11 for compatibility with unstructured-ingest v2. This must be set as an environment variable named `PYTHON_VERSION` with a full version string (major.minor.patch) such as `3.11.9`. The patch version must be specified for proper deployment.
+
+Important: Make sure to set the `PORT` environment variable in Render to specify which port your application should listen on. Render requires that you bind to the port specified in the `PORT` environment variable. If no port is specified, Render will automatically assign one.
 
 ### Server Configuration
 
