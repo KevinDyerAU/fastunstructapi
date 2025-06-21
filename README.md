@@ -1,14 +1,18 @@
 # FastUnstructAPI
 
-A document processing API that integrates with AWS S3, Unstructured.io, and Supabase for document ingestion, processing, and storage.
+A document processing API that bridges your data with Unstructured.io's powerful document processing capabilities, enabling seamless integration with AWS S3 and Supabase for scalable document ingestion, processing, and storage.
 
 ## Overview
 
-FastUnstructAPI is a Flask-based API service that provides document processing capabilities using Unstructured.io's document processing pipeline. The service is designed to:
+FastUnstructAPI is a Flask-based API service that leverages Unstructured.io's industry-leading document processing technology to transform unstructured data into AI-ready formats. The service is designed to:
 
 1. Ingest documents from AWS S3
-2. Process documents using Unstructured.io's API
+2. Process documents using Unstructured.io's advanced document processing pipeline
 3. Store processed data in Supabase PostgreSQL database
+
+### About Unstructured.io
+
+Unstructured.io is an award-winning platform recognized as a leader in enterprise data infrastructure. It helps businesses unlock value from unstructured data by transforming it into a format that large language models can understand. The platform is trusted by Fortune 1000 companies and has been recognized by Fast Company, Forbes AI50, CB Insights AI 100, and Gartner Cool Vendor.
 
 ## Features
 
@@ -27,6 +31,16 @@ FastUnstructAPI is a Flask-based API service that provides document processing c
 - AWS S3 credentials
 - Unstructured.io API key
 - Supabase credentials
+
+### Server Configuration
+
+To run the Flask server locally, you can specify the port number using the `--port` flag:
+
+```bash
+python src/main.py --port 5000
+```
+
+The default port is 5000, but you can change it to any available port number.
 
 ### Environment Variables
 
