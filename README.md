@@ -27,10 +27,40 @@ Unstructured.io is an award-winning platform recognized as a leader in enterpris
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.11 (Required for Render deployment)
 - AWS S3 credentials
 - Unstructured.io API key
 - Supabase credentials
+
+### Render Deployment
+
+To deploy this application on Render:
+
+1. Create a new Web Service on Render
+2. Connect your GitHub repository
+3. In the Environment Variables section, set:
+   - `AWS_S3_KEY`
+   - `AWS_S3_SECRET`
+   - `UNSTRUCT_API_KEY`
+   - `SUPABASE_PASSWORD`
+
+4. Under Build Command, use:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. Under Start Command, use:
+   ```bash
+   gunicorn wsgi:app
+   ```
+
+6. Set the Python version in Render:
+   - Go to the Environment Variables section
+   - Add a new environment variable:
+     - Key: `PYTHON_VERSION`
+     - Value: `3.11`
+
+Note: The application requires Python 3.11 for compatibility with unstructured-ingest v2. This must be set as an environment variable named `PYTHON_VERSION` with the value `3.11` for proper deployment.
 
 ### Server Configuration
 
