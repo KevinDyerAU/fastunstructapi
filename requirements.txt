@@ -4,7 +4,7 @@ Flask-Pydantic-Spec==0.8.5
 
 Gunicorn==21.2.0
 
-unstructured-ingest[remote,s3,pdf,docx,postgres]==0.9.0
+unstructured-ingest[remote,s3,pdf,docx,postgres]>=0.9.0
 
 boto3
 
