@@ -1,6 +1,6 @@
 Flask==3.0.0
 Flask-Cors==4.0.0
-Flask-Pydantic-Spec==0.11.1
+Flask-Pydantic-Spec==0.8.5
 
 Gunicorn==21.2.0
 
@@ -15,6 +15,6 @@ boto3==1.34.39
 pydantic-settings==2.6.0
 python-dotenv==1.0.0
 
-logging==0.5.1.2
+logging==0.4.9.6
 
 uvicorn==0.27.0
