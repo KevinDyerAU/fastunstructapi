@@ -58,9 +58,9 @@ To deploy this application on Render:
    - Go to the Environment Variables section
    - Add a new environment variable:
      - Key: `PYTHON_VERSION`
-     - Value: `3.11`
+     - Value: `3.11.9`
 
-Note: The application requires Python 3.11 for compatibility with unstructured-ingest v2. This must be set as an environment variable named `PYTHON_VERSION` with the value `3.11` for proper deployment.
+Note: The application requires Python 3.11 for compatibility with unstructured-ingest v2. This must be set as an environment variable named `PYTHON_VERSION` with a full version string (major.minor.patch) such as `3.11.9`. The patch version must be specified for proper deployment.
 
 ### Server Configuration
 
