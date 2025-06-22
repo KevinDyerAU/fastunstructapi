@@ -3,7 +3,6 @@
   publish = "functions"
 
 [functions]
-  pythonVersion = "3.11"
   external_node_modules = []
 
 [functions.environment]
