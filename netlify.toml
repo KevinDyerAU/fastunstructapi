@@ -3,8 +3,8 @@
   publish = "functions"
 
 [functions]
-  [functions.pythonVersion]
-    version = "3.11"
+  pythonVersion = "3.11"
+  external_node_modules = []
 
 [functions.environment]
   AWS_ACCESS_KEY_ID1 = "${AWS_ACCESS_KEY_ID1}"
