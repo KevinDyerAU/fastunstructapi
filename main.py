@@ -21,6 +21,7 @@ from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     PostgresUploadStagerConfig
 )
 
+import os
 from flask import Flask,jsonify,request
 
 app = Flask(__name__)
@@ -39,10 +40,10 @@ def root():
 async def access():
     data = request.get_json()
     fileName = data.get("fileName")
-    awsK = data.get("awsK")
-    awsS = data.get("awsS")
-    unstrK = data.get("unstrK")
-    supaK = data.get("supaK")
+    awsK = os.environ.get("AWS_ACCESS_KEY_ID1")
+    awsS = os.environ.get("AWS_SECRET_ACCESS_KEY1")
+    unstrK = os.environ.get("UNSTRUCTURED_API_KEY")
+    supaK = os.environ.get("SUPABASE_PASSWORD")
 
 
     await startPipeline(fileName, awsK, awsS, unstrK, supaK)
