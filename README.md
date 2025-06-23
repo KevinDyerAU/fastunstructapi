@@ -51,24 +51,18 @@ To deploy this application on Render:
 
 5. Under Start Command, use:
    ```bash
-   gunicorn wsgi:app
+   gunicorn -w 4 main:app
    ```
 
 6. Set the Python version in Render:
    - Go to the Environment Variables section
    - Add a new environment variable:
      - Key: `PYTHON_VERSION`
-     - Value: `3.11.9`
+     - Value: `3.12.3`
 
-7. Set the port configuration:
-   - Go to the Environment Variables section
-   - Add a new environment variable:
-     - Key: `PORT`
-     - Value: `8080` (or any other port number you prefer)
+Note: The application requires Python 3.12.3 for compatibility with the latest dependencies. This must be set as an environment variable named `PYTHON_VERSION` with a full version string (major.minor.patch) such as `3.12.3`. The patch version must be specified for proper deployment.
 
-Note: The application requires Python 3.11 for compatibility with unstructured-ingest v2. This must be set as an environment variable named `PYTHON_VERSION` with a full version string (major.minor.patch) such as `3.11.9`. The patch version must be specified for proper deployment.
-
-Important: Make sure to set the `PORT` environment variable in Render to specify which port your application should listen on. Render requires that you bind to the port specified in the `PORT` environment variable. If no port is specified, Render will automatically assign one.
+Important: Render will automatically set the `PORT` environment variable for your application. You don't need to set it manually. The application will use this port through the Gunicorn server configuration in the `Procfile`.
 
 ### Server Configuration
 
