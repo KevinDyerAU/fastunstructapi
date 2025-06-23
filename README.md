@@ -101,92 +101,67 @@ SUPABASE_PASSWORD=your_supabase_password
 
 ## API Endpoints
 
-### Root Endpoint
+### Health Check Endpoint
 
 ```
 GET /
 ```
 
-Returns a health check message.
-
-### Process Endpoint
-
-```
-POST /process
-```
-
-Process documents from S3:
+Returns a health check message:
 
 ```json
 {
-    "folder": "s3://your-bucket/path/to/folder",
-    "strategy": "hi_res"  # Optional: auto, fast, hi_res, ocr_only, vlm
+    "Message": "app up and running successfully"
 }
 ```
 
-### Access Endpoint
+### Document Processing Endpoint
 
 ```
 POST /access
 ```
 
-Process documents with explicit credentials:
+Process documents from AWS S3 with explicit credentials. This endpoint requires the following JSON payload:
 
 ```json
 {
-    "fileName": "path/to/file",
-    "awsK": "your_aws_key",
-    "awsS": "your_aws_secret",
-    "unstrK": "your_unstructured_key",
-    "supaK": "your_supabase_password",
-    "strategy": "hi_res"  # Optional: auto, fast, hi_res, ocr_only, vlm
+    "fileName": "path/to/file"
 }
 ```
 
-### Single File Processing Endpoint
+The following environment variables must be set:
+- `AWS_ACCESS_KEY_ID1`: AWS access key
+- `AWS_SECRET_ACCESS_KEY1`: AWS secret key
+- `UNSTRUCTURED_API_KEY`: Unstructured.io API key
+- `SUPABASE_PASSWORD`: Supabase password
 
-```
-POST /process_single
-```
+Example curl command:
 
-Process a single file from S3. This endpoint returns the processed elements directly instead of storing them in the database.
-
-Example request:
-
-```json
-{
-    "s3Path": "s3://your-bucket/path/to/file.pdf",
-    "awsK": "your_aws_key",
-    "awsS": "your_aws_secret",
-    "unstrK": "your_unstructured_key",
-    "strategy": "hi_res"  # Optional: auto, fast, hi_res, ocr_only, vlm
-}
+```bash
+# Replace YOUR_API_URL with your deployed API URL
+# Replace YOUR_FILE_PATH with the S3 path to your file
+curl -X POST YOUR_API_URL/access \
+  -H "Content-Type: application/json" \
+  -d '{"fileName": "YOUR_FILE_PATH"}'
 ```
 
 Example response:
 
 ```json
 {
-    "message": "File processing completed",
-    "file": "s3://your-bucket/path/to/file.pdf",
-    "elements": [
-        {
-            "type": "Title",
-            "text": "Document Title",
-            "metadata": {
-                "page_number": 1,
-                "coordinates": [...]
-            }
-        },
-        {...}
-    ],
-    "metadata": {
-        "bucket": "your-bucket",
-        "key": "path/to/file.pdf",
-        "file_size": 123456,
-        "content_type": "application/pdf"
-    }
+    "Message": "Filename YOUR_FILE_PATH received and processed"
 }
+```
+
+### Available Parsing Strategies
+
+The API supports several parsing strategies for document processing:
+
+- `auto`: Automatically chooses the best strategy based on document characteristics (default)
+- `fast`: Uses rule-based techniques for quick text extraction (not recommended for image-based files)
+- `hi_res`: Uses advanced models to identify document layout and elements (recommended for high-quality processing)
+- `ocr_only`: Uses OCR for image-based files
+- `vlm`: Uses vision language models for image-based files (.bmp, .gif, .heic, .jpeg, .jpg, .pdf, .png, .tiff, .webp)
 ```
 
 ### Available Parsing Strategies
