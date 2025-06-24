@@ -3,7 +3,7 @@ import sys
 import pathlib
 
 # Add project root to Python path
-project_root = str(pathlib.Path(__file__).parent)
+project_root = str(pathlib.Path(__file__).parent.parent)  # Move up one level to include src/
 sys.path.append(project_root)
 
 from src.main import app
