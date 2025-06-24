@@ -68,7 +68,8 @@ def root():
 
 @app.route("/process", methods=["POST"])
 @spec.validate(
-    body=Response(HTTP_200=ProcessingResponse, HTTP_400=ProcessingResponse)
+    body=FileProcessRequest,
+    resp=Response(HTTP_200=ProcessingResponse, HTTP_400=ProcessingResponse)
 )
 def process():
     """Process documents from S3 using configured credentials"""
@@ -90,7 +91,8 @@ def process():
 
 @app.route("/access", methods=["POST"])
 @spec.validate(
-    body=Response(HTTP_200=ProcessingResponse, HTTP_400=ProcessingResponse)
+    body=FileAccessRequest,
+    resp=Response(HTTP_200=ProcessingResponse, HTTP_400=ProcessingResponse)
 )
 async def access():
     """Process documents with explicit credentials"""
@@ -117,7 +119,8 @@ async def access():
 
 @app.route("/process_single", methods=["POST"])
 @spec.validate(
-    body=Response(HTTP_200=SingleFileResponse, HTTP_400=SingleFileResponse)
+    body=SingleFileRequest,
+    resp=Response(HTTP_200=SingleFileResponse, HTTP_400=SingleFileResponse)
 )
 async def process_single():
     """Process a single file from S3"""
@@ -143,4 +146,4 @@ async def process_single():
 
 if __name__ == "__main__":
     config = get_config()
-    app.run(debug=config.debug, host="0.0.0.0", port=80)
+    app.run(debug=config.debug, host="0.0.0.0", port=8080)

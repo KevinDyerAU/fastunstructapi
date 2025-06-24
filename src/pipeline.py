@@ -9,17 +9,17 @@ from typing import List, Dict, Any, Optional
 import logging
 import io
 import boto3
-from unstructured_ingest.v2.pipeline.pipeline import Pipeline
-from unstructured_ingest.v2.interfaces import ProcessorConfig
-from unstructured_ingest.v2.processes.connectors.fsspec.s3 import (
+from unstructured_ingest.pipeline.pipeline import Pipeline
+from unstructured_ingest.interfaces import ProcessorConfig
+from unstructured_ingest.processes.connectors.fsspec.s3 import (
     S3IndexerConfig,
     S3DownloaderConfig,
     S3ConnectionConfig,
     S3AccessConfig
 )
-from unstructured_ingest.v2.processes.partitioner import PartitionerConfig
-from unstructured_ingest.v2.processes.chunker import ChunkerConfig
-from unstructured_ingest.v2.processes.connectors.sql.postgres import (
+from unstructured_ingest.processes.partitioner import PartitionerConfig
+from unstructured_ingest.processes.chunker import ChunkerConfig
+from unstructured_ingest.processes.connectors.sql.postgres import (
     PostgresConnectionConfig,
     PostgresAccessConfig,
     PostgresUploaderConfig,
