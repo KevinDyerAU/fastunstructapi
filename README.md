@@ -51,7 +51,7 @@ To deploy this application on Render:
 
 5. Under Start Command, use:
    ```bash
-   gunicorn -w 4 main:app
+   gunicorn src.main:app --timeout 240
    ```
 
 6. Set the Python version in Render:
@@ -62,17 +62,23 @@ To deploy this application on Render:
 
 Note: The application requires Python 3.12.3 for compatibility with the latest dependencies. This must be set as an environment variable named `PYTHON_VERSION` with a full version string (major.minor.patch) such as `3.12.3`. The patch version must be specified for proper deployment.
 
-Important: Render will automatically set the `PORT` environment variable for your application. You don't need to set it manually. The application will use this port through the Gunicorn server configuration in the `Procfile`.
+Important: Render will automatically set the `PORT` environment variable for your application. You don't need to set it manually. The application will use this port through the Gunicorn server configuration in the `render.yaml` file.
 
 ### Server Configuration
 
-To run the Flask server locally, you can specify the port number using the `--port` flag:
+To run the Flask server locally:
 
 ```bash
-python src/main.py --port 5000
+python wsgi.py
 ```
 
-The default port is 5000, but you can change it to any available port number.
+The application will automatically use the port specified in the `PORT` environment variable, defaulting to port 80 if not specified.
+
+Alternatively, you can run the application directly using:
+
+```bash
+python src/main.py
+```
 
 ### Environment Variables
 
