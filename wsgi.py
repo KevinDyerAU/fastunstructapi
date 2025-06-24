@@ -2,11 +2,11 @@ import os
 import sys
 import pathlib
 
-# Add src directory to Python path
-src_path = str(pathlib.Path(__file__).parent / 'src')
-sys.path.append(src_path)
+# Add project root to Python path
+project_root = str(pathlib.Path(__file__).parent)
+sys.path.append(project_root)
 
-from main import app
+from src.main import app
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 80))
