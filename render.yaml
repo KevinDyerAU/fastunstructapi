@@ -1,12 +1,49 @@
-# Exported from Render on 2024-11-23T04:03:01Z
+# FastUnstructAPI Render Configuration
+# Python 3.12.3 is required for compatibility with dependencies
+
 services:
 - type: web
-  name: fastunstructpostgres
+  name: fastunstructapi
   runtime: python
   repo: https://github.com/KevinDyerAU/fastunstructapi
   plan: starter
   region: singapore
-  buildCommand: pip install -r requirements.txt
-  startCommand: gunicorn --chdir src main:app --timeout 240
-  autoDeploy: false
+  buildCommand: |
+    pip install -r requirements.txt
+  startCommand: gunicorn src.main:app --timeout 240
+  envVars:
+    - key: PYTHON_VERSION
+      value: 3.12.3
+    - key: PYTHONUNBUFFERED
+      value: true
+    - key: PYTHONDONTWRITEBYTECODE
+      value: 1
+    - key: PYTHONFAULTHANDLER
+      value: 1
+  envVars:
+    - key: AWS_S3_KEY
+      fromService:
+        name: fastunstructapi
+        type: web
+        property: env.AWS_S3_KEY
+    - key: AWS_S3_SECRET
+      fromService:
+        name: fastunstructapi
+        type: web
+        property: env.AWS_S3_SECRET
+    - key: UNSTRUCT_API_KEY
+      fromService:
+        name: fastunstructapi
+        type: web
+        property: env.UNSTRUCT_API_KEY
+    - key: SUPABASE_PASSWORD
+      fromService:
+        name: fastunstructapi
+        type: web
+        property: env.SUPABASE_PASSWORD
+  autoDeploy: true
+  healthCheckPath: /
+  numInstances: 1
+
+# Required for Render
 version: "1"

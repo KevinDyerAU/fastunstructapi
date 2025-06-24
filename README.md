@@ -2,6 +2,8 @@
 
 A document processing API that bridges your data with Unstructured.io's powerful document processing capabilities, enabling seamless integration with AWS S3 and Supabase for scalable document ingestion, processing, and storage.
 
+> **Latest Update (June 2025)**: Added support for Python 3.12.3 and updated deployment configuration for Render.
+
 ## Overview
 
 FastUnstructAPI is a Flask-based API service that leverages Unstructured.io's industry-leading document processing technology to transform unstructured data into AI-ready formats. The service is designed to:
@@ -27,42 +29,98 @@ Unstructured.io is an award-winning platform recognized as a leader in enterpris
 
 ### Prerequisites
 
-- Python 3.11 (Required for Render deployment)
+- Python 3.12.3 (Required for compatibility with dependencies)
 - AWS S3 credentials
 - Unstructured.io API key
 - Supabase credentials
+- Git
+- pip (Python package manager)
 
 ### Render Deployment
 
-To deploy this application on Render:
+This project includes a `render.yaml` file for easy deployment to Render. Follow these steps:
 
-1. Create a new Web Service on Render
-2. Connect your GitHub repository
-3. In the Environment Variables section, set:
-   - `AWS_S3_KEY`
-   - `AWS_S3_SECRET`
-   - `UNSTRUCT_API_KEY`
-   - `SUPABASE_PASSWORD`
+1. **Fork this repository** to your GitHub account
+2. **Create a new Web Service** on Render
+3. **Connect your GitHub repository**
+4. **Configure the service**:
+   - Name: `fastunstructapi` (or your preferred name)
+   - Region: Choose the closest to your users
+   - Branch: `main` (or your preferred branch)
+   - Runtime: `Python 3`
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn src.main:app --timeout 240`
+   - Plan: `Starter` (or higher for production)
 
-4. Under Build Command, use:
+5. **Set environment variables** in the Render dashboard:
+   - `PYTHON_VERSION`: `3.12.3` (Required)
+   - `PYTHONUNBUFFERED`: `true`
+   - `PYTHONDONTWRITEBYTECODE`: `1`
+   - `PYTHONFAULTHANDLER`: `1`
+   - `AWS_S3_KEY`: Your AWS S3 access key
+   - `AWS_S3_SECRET`: Your AWS S3 secret key
+   - `UNSTRUCT_API_KEY`: Your Unstructured.io API key
+   - `SUPABASE_PASSWORD`: Your Supabase database password
+
+6. **Deploy** the application
+
+> **Note**: The application will be available at `https://your-render-app.onrender.com` after deployment.
+
+### Local Development
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/yourusername/fastunstructapi.git
+   cd fastunstructapi
+   ```
+
+2. **Create a virtual environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
 
-5. Under Start Command, use:
-   ```bash
-   gunicorn src.main:app --timeout 240
+4. **Set up environment variables**:
+   Create a `.env` file in the root directory with the following content:
+   ```env
+   # AWS S3 Credentials
+   AWS_S3_KEY=your_aws_access_key
+   AWS_S3_SECRET=your_aws_secret_key
+   
+   # Unstructured.io API Key
+   UNSTRUCT_API_KEY=your_unstructured_api_key
+   
+   # Supabase Database Password
+   SUPABASE_PASSWORD=your_supabase_database_password
    ```
 
-6. Set the Python version in Render:
-   - Go to the Environment Variables section
-   - Add a new environment variable:
-     - Key: `PYTHON_VERSION`
-     - Value: `3.12.3`
+5. **Run the application**:
+   ```bash
+   python -m src.main
+   ```
+   The API will be available at `http://localhost:8080`
 
-Note: The application requires Python 3.12.3 for compatibility with the latest dependencies. This must be set as an environment variable named `PYTHON_VERSION` with a full version string (major.minor.patch) such as `3.12.3`. The patch version must be specified for proper deployment.
+### Environment Variables
 
-Important: Render will automatically set the `PORT` environment variable for your application. You don't need to set it manually. The application will use this port through the Gunicorn server configuration in the `render.yaml` file.
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AWS_S3_KEY` | Yes | AWS S3 access key |
+| `AWS_S3_SECRET` | Yes | AWS S3 secret key |
+| `UNSTRUCT_API_KEY` | Yes | Unstructured.io API key |
+| `SUPABASE_PASSWORD` | Yes | Supabase database password |
+| `PYTHON_VERSION` | Yes (Render) | Must be set to `3.12.3` |
+| `PYTHONUNBUFFERED` | No | Set to `true` for better logging |
+| `PYTHONDONTWRITEBYTECODE` | No | Set to `1` to prevent .pyc files |
+| `PYTHONFAULTHANDLER` | No | Set to `1` for better error reporting |
+
+### Server Configuration
+
+For production deployments, it's recommended to use Gunicorn with multiple workers. The `render.yaml` file is already configured for this.
 
 ### Server Configuration
 
