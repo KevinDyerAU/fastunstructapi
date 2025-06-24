@@ -25,7 +25,7 @@ from unstructured_ingest.v2.processes.connectors.sql.postgres import (
     PostgresUploaderConfig,
     PostgresUploadStagerConfig
 )
-from unstructured.partition.api import partition
+from unstructured.partition.auto import partition
 
 
 logger = logging.getLogger(__name__)
