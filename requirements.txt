@@ -1,5 +1,6 @@
 Flask==3.1.0
 Flask-Cors==4.0.0
+Flask-Pydantic-Spec==0.8.5
 Gunicorn==21.2.0
 
 unstructured-ingest[remote]==0.7.0

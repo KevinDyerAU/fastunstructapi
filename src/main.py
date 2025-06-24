@@ -4,7 +4,7 @@ Main entry point for FastUnstructAPI
 This module contains the Flask application and API endpoints for document processing.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 import logging
 from flask import Flask, jsonify, request
 from flask_cors import CORS
