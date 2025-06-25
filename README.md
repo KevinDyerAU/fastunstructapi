@@ -213,24 +213,54 @@ Example response:
 
 ### Available Parsing Strategies
 
-The API supports several parsing strategies for document processing:
+The API supports several parsing strategies for document processing, each with different performance characteristics and cost implications:
 
-- `auto`: Automatically chooses the best strategy based on document characteristics (default)
-- `fast`: Uses rule-based techniques for quick text extraction (not recommended for image-based files)
-- `hi_res`: Uses advanced models to identify document layout and elements (recommended for high-quality processing)
-- `ocr_only`: Uses OCR for image-based files
-- `vlm`: Uses vision language models for image-based files (.bmp, .gif, .heic, .jpeg, .jpg, .pdf, .png, .tiff, .webp)
-```
+#### `auto` (Default)
+- **Description**: Automatically selects the most appropriate strategy based on document characteristics
+- **Performance**: Optimized for a balance of speed and accuracy
+- **Cost**: Variable - depends on the automatically chosen strategy
+- **Use Case**: General purpose when you're unsure which strategy to use
+- **Best For**: Most standard documents where you want a good balance of performance and accuracy
 
-### Available Parsing Strategies
+#### `fast`
+- **Description**: Uses rule-based techniques for quick text extraction
+- **Performance**: Fastest option with lowest computational requirements
+- **Cost**: Lowest cost option
+- **Limitations**: Not suitable for image-based files or complex layouts
+- **Best For**: Simple text documents with extractable text where speed is critical
 
-The API supports several parsing strategies for document processing:
+#### `hi_res` (High Resolution)
+- **Description**: Uses advanced models to identify document layout and elements
+- **Performance**: Slower but provides highest accuracy for complex documents
+- **Cost**: Higher computational cost due to advanced model inference
+- **Best For**: Documents with complex layouts where accurate element identification is crucial
+- **Note**: Falls back to `ocr_only` if the required models are not available
 
-- `auto`: Automatically chooses the best strategy based on document characteristics (default)
-- `fast`: Uses rule-based techniques for quick text extraction (not recommended for image-based files)
-- `hi_res`: Uses advanced models to identify document layout and elements (recommended for high-quality processing)
-- `ocr_only`: Uses OCR for image-based files
-- `vlm`: Uses vision language models for image-based files (.bmp, .gif, .heic, .jpeg, .jpg, .pdf, .png, .tiff, .webp)
+#### `ocr_only`
+- **Description**: Uses Optical Character Recognition (OCR) for text extraction
+- **Performance**: Slower than `fast` but necessary for image-based content
+- **Cost**: Moderate - requires OCR processing
+- **Best For**: Scanned documents or images containing text
+- **Note**: Falls back to `fast` if Tesseract is not available and text is extractable
+
+#### `vlm` (Vision Language Model)
+- **Description**: Uses vision language models for image-based files
+- **Performance**: Slowest option due to complex model inference
+- **Cost**: Highest cost option - requires significant computational resources
+- **Supported Formats**: .bmp, .gif, .heic, .jpeg, .jpg, .pdf, .png, .tiff, .webp
+- **Best For**: Complex image-based documents where maximum accuracy is required
+
+### Cost and Performance Summary
+
+| Strategy | Speed | Cost | Best For |
+|----------|-------|------|----------|
+| `auto`   | Fast to Medium | Low to Medium | General purpose, most documents |
+| `fast`   | Fastest | Lowest | Simple text documents with extractable text |
+| `hi_res` | Slower | Higher | Complex layouts, accurate element identification |
+| `ocr_only` | Medium | Medium | Scanned documents, image-based text |
+| `vlm`    | Slowest | Highest | Complex image-based documents requiring maximum accuracy |
+
+> **Note**: The actual cost will depend on your deployment environment and usage patterns. For high-volume processing, consider starting with `fast` and only using more expensive strategies when necessary.
 
 ## Project Structure
 
