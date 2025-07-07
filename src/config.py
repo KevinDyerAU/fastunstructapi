@@ -11,7 +11,7 @@ from pydantic_settings import BaseSettings
 from pydantic import Field, HttpUrl, ValidationError
 
 # Set up logging
-logging.basicConfig(level=os.getenv('LOG_LEVEL', 'INFO'))
+logging.basicConfig(level=os.getenv('LOG_LEVEL', 'DEBUG'))
 logger = logging.getLogger(__name__)
 
 
@@ -19,15 +19,40 @@ class Config(BaseSettings):
     """Application configuration settings"""
     
     def __init__(self, **data):
+        # First log all environment variables (for debugging)
+        logger.debug("Available environment variables:")
+        for k, v in os.environ.items():
+            if any(skip in k.lower() for skip in ['key', 'pass', 'token', 'secret']):
+                logger.debug(f"  {k} = ***REDACTED***")
+            else:
+                logger.debug(f"  {k} = {v}")
+                
+        # Then initialize the config
         super().__init__(**data)
-        logger.debug("Initializing Config with environment variables:")
+        
+        # Log the loaded configuration
+        logger.debug("\nLoaded configuration:")
         for field_name, field in self.__fields__.items():
             env_vars = getattr(field.field_info, 'env_names', [])
-            env_value = None
+            field_value = getattr(self, field_name, None)
+            
+            # Log the field and its source
+            source = "default"
             for env_var in env_vars:
-                if env_value is None:
-                    env_value = os.getenv(env_var)
-            logger.debug(f"  {field_name}: {'***' if 'password' in field_name or 'key' in field_name else env_value} (from env: {env_vars})")
+                if os.getenv(env_var) is not None:
+                    source = f"env:{env_var}"
+                    break
+                    
+            # Redact sensitive information
+            display_value = field_value
+            if field_value and any(skip in field_name.lower() for skip in ['key', 'pass', 'token', 'secret']):
+                display_value = '***REDACTED***'
+                
+            logger.debug(f"  {field_name}: {display_value} (from {source})")
+            
+            # Log warning if required field is missing
+            if field.is_required() and field_value is None:
+                logger.warning(f"⚠️  Required field '{field_name}' is None")
     
     # AWS S3 Configuration
     aws_access_key_id: str = Field(..., env=["AWS_ACCESS_KEY_ID", "AWS_S3_KEY"])
@@ -111,41 +136,62 @@ def get_aws_config() -> Dict[str, Any]:
 
 
 def get_supabase_config() -> Dict[str, Any]:
-    """Get Supabase configuration dictionary
+    """Get Supabase configuration dictionary with validation.
     
     Returns:
         Dict containing Supabase connection details
+        
+    Raises:
+        ValueError: If required configuration is missing
     """
     try:
-        logger.debug("Loading Supabase configuration...")
+        logger.info("🔍 Loading Supabase configuration...")
         config = get_config()
         
-        # Log the actual values being used (safely)
+        # Build config dictionary with validation
         supabase_config = {
             "host": config.supabase_host,
             "port": config.supabase_port,
             "username": config.supabase_username,
             "database": config.supabase_database,
-            "password": "***" if config.supabase_password else None,
+            "password": config.supabase_password,
             "table_name": config.supabase_table
         }
         
-        logger.debug(f"Supabase config loaded: { {k: '***' if 'password' in k else v for k, v in supabase_config.items()} }")
+        # Log the config (safely)
+        safe_config = {k: '***' if k == 'password' else v 
+                      for k, v in supabase_config.items()}
+        logger.debug(f"Supabase configuration: {safe_config}")
         
-        # Verify required fields
-        required_fields = ['host', 'username', 'database', 'password']
-        missing_fields = [field for field in required_fields if not supabase_config.get(field)]
+        # Validate required fields
+        required_fields = {
+            'host': "Supabase host (SUPABASE_HOST)",
+            'username': "Database username (SUPABASE_USERNAME)",
+            'database': "Database name (SUPABASE_DATABASE)",
+            'password': "Database password (SUPABASE_PASSWORD)"
+        }
         
-        if missing_fields:
-            logger.error(f"Missing required Supabase configuration: {', '.join(missing_fields)}")
-            logger.error("Current Supabase config:")
-            for k, v in supabase_config.items():
-                logger.error(f"  {k}: {'***' if 'password' in k else v}")
+        missing = [desc for field, desc in required_fields.items() 
+                  if not supabase_config.get(field)]
         
+        if missing:
+            error_msg = f"Missing required Supabase configuration: {', '.join(missing)}"
+            logger.error(error_msg)
+            
+            # Log current environment for debugging
+            logger.debug("Current environment variables:")
+            for k, v in os.environ.items():
+                if k.startswith('SUPABASE_') or k.startswith('AWS_'):
+                    logger.debug(f"  {k} = {'***' if any(x in k.lower() for x in ['key', 'pass', 'secret']) else v}")
+            
+            raise ValueError(error_msg)
+            
+        logger.info("✅ Successfully loaded Supabase configuration")
         return supabase_config
         
     except Exception as e:
-        logger.error(f"Error loading Supabase configuration: {str(e)}", exc_info=True)
+        logger.error("❌ Failed to load Supabase configuration")
+        logger.exception("Configuration error:")
         raise
 
 
