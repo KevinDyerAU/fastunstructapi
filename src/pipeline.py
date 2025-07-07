@@ -11,8 +11,16 @@ import os
 import json
 from pathlib import Path
 
-# Import the updated client
-from unstructured_workflow_client import (
+# Import the updated client from the updated folder
+import sys
+from pathlib import Path
+
+# Add the project root to the Python path
+project_root = str(Path(__file__).parent.parent)
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+from updated.unstructured_workflow_client import (
     UnstructuredWorkflowClient,
     S3SourceConfig,
     SupabaseDestinationConfig,
