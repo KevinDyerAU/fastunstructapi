@@ -168,7 +168,7 @@ def process_documents(
         supabase_config = supabase_config or config.get_supabase_config()
 
         # Create and run the pipeline
-        pipeline = create_pipeline_config(
+        pipeline = create_workflow_config(
             folder=folder,
             aws_config=aws_config,
             unstructured_config=unstructured_config,
