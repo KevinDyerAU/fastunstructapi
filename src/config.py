@@ -4,10 +4,15 @@ Configuration management for FastUnstructAPI
 This module handles all configuration and environment variable loading for the application.
 """
 
-from typing import Optional, Dict, Any
+import logging
 import os
+from typing import Optional, Dict, Any
 from pydantic_settings import BaseSettings
-from pydantic import Field, HttpUrl
+from pydantic import Field, HttpUrl, ValidationError
+
+# Set up logging
+logging.basicConfig(level=os.getenv('LOG_LEVEL', 'INFO'))
+logger = logging.getLogger(__name__)
 
 
 class Config(BaseSettings):
@@ -52,7 +57,31 @@ class Config(BaseSettings):
 
 def get_config() -> Config:
     """Get the application configuration"""
-    return Config()
+    try:
+        # Log environment variables (safely, without sensitive data)
+        env_vars = {
+            'AWS_ACCESS_KEY_ID': '***' if os.getenv('AWS_ACCESS_KEY_ID') else None,
+            'AWS_SECRET_ACCESS_KEY': '***' if os.getenv('AWS_SECRET_ACCESS_KEY') else None,
+            'UNSTRUCTURED_API_KEY': '***' if os.getenv('UNSTRUCTURED_API_KEY') else None,
+            'SUPABASE_HOST': os.getenv('SUPABASE_HOST'),
+            'SUPABASE_USERNAME': os.getenv('SUPABASE_USERNAME'),
+            'SUPABASE_DATABASE': os.getenv('SUPABASE_DATABASE'),
+            'SUPABASE_PASSWORD': '***' if os.getenv('SUPABASE_PASSWORD') else None,
+        }
+        logger.debug(f"Environment variables: {env_vars}")
+        
+        # Try to load config
+        config = Config()
+        logger.info("Successfully loaded configuration")
+        logger.debug(f"Loaded config: {config}")
+        return config
+        
+    except ValidationError as e:
+        logger.error(f"Configuration validation error: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error loading configuration: {e}")
+        raise
 
 
 def get_aws_config() -> Dict[str, Any]:

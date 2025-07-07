@@ -58,10 +58,23 @@ This project includes a `render.yaml` file for easy deployment to Render. Follow
    - `PYTHONUNBUFFERED`: `true`
    - `PYTHONDONTWRITEBYTECODE`: `1`
    - `PYTHONFAULTHANDLER`: `1`
-   - `AWS_S3_KEY`: Your AWS S3 access key
-   - `AWS_S3_SECRET`: Your AWS S3 secret key
-   - `UNSTRUCT_API_KEY`: Your Unstructured.io API key
+   
+   #### Required Variables
+   - `AWS_ACCESS_KEY_ID`: Your AWS S3 access key
+   - `AWS_SECRET_ACCESS_KEY`: Your AWS S3 secret key
+   - `UNSTRUCTURED_API_KEY`: Your Unstructured.io API key
+   - `SUPABASE_HOST`: Your Supabase database host
+   - `SUPABASE_USERNAME`: Your Supabase database username
    - `SUPABASE_PASSWORD`: Your Supabase database password
+   - `SUPABASE_DATABASE`: Your Supabase database name (default: `postgres`)
+   
+   #### Optional Variables
+   - `AWS_SESSION_TOKEN`: (Optional) For temporary AWS credentials
+   - `AWS_REGION`: (Optional) AWS region (default: `ap-southeast-2`)
+   - `SUPABASE_PORT`: (Optional) Database port (default: `5432`)
+   - `SUPABASE_TABLE`: (Optional) Table name (default: `elements`)
+   - `LOG_LEVEL`: (Optional) Logging level (default: `INFO`)
+   - `DEBUG`: (Optional) Set to `True` for debug mode (default: `False`)
 
 6. **Deploy** the application
 
@@ -87,7 +100,21 @@ This project includes a `render.yaml` file for easy deployment to Render. Follow
    ```
 
 4. **Set up environment variables**:
-   Create a `.env` file in the root directory with the following content:
+   Copy the example environment file and update it with your credentials:
+   
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Then edit the `.env` file with your configuration. Required variables are:
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
+   - `UNSTRUCTURED_API_KEY`
+   - `SUPABASE_HOST`
+   - `SUPABASE_USERNAME`
+   - `SUPABASE_PASSWORD`
+   
+   See the [Environment Variables](#environment-variables) section for all available options.
    ```env
    # AWS Configuration
    AWS_ACCESS_KEY_ID=your_access_key
@@ -157,6 +184,50 @@ This project includes a `render.yaml` file for easy deployment to Render. Follow
 ### Server Configuration
 
 For production deployments, it's recommended to use Gunicorn with multiple workers. The `render.yaml` file is already configured for this.
+
+### Troubleshooting
+
+#### Environment Variables Not Loading
+If you're seeing errors about missing configuration:
+1. Verify all required environment variables are set
+2. Check for typos in variable names
+3. For local development, ensure the `.env` file is in the root directory
+4. Restart your application after changing environment variables
+
+#### Common Issues
+- **Missing Supabase Configuration**: Ensure all required Supabase variables are set
+- **AWS Credentials Error**: Verify your AWS credentials have the correct permissions
+- **API Connection Issues**: Check your internet connection and API endpoint URLs
+
+#### Debugging
+To enable debug logging, set:
+```bash
+export LOG_LEVEL=DEBUG
+# On Windows:
+# set LOG_LEVEL=DEBUG
+```
+
+### Running Tests
+
+To run the test suite:
+
+```bash
+# Install test dependencies
+pip install -r requirements-dev.txt
+
+# Run tests
+pytest tests/
+```
+
+### Development
+
+For local development with automatic reloading:
+
+```bash
+uvicorn src.main:app --reload
+```
+
+The API will be available at `http://localhost:8000`
 
 ### API Endpoints
 
