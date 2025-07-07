@@ -1,32 +1,23 @@
 """
 Document processing pipeline implementation
 
-This module implements the document processing pipeline using Unstructured.io's
-components for ingestion, processing, and storage.
+This module implements the document processing pipeline using the updated
+Unstructured.io workflow client for ingestion, processing, and storage.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 import logging
-import io
-import boto3
-from unstructured_ingest.pipeline.pipeline import Pipeline
-from unstructured_ingest.interfaces import ProcessorConfig
-from unstructured_ingest.processes.connectors.fsspec.s3 import (
-    S3IndexerConfig,
-    S3DownloaderConfig,
-    S3ConnectionConfig,
-    S3AccessConfig
-)
-from unstructured_ingest.processes.partitioner import PartitionerConfig
-from unstructured_ingest.processes.chunker import ChunkerConfig
-from unstructured_ingest.processes.connectors.sql.postgres import (
-    PostgresConnectionConfig,
-    PostgresAccessConfig,
-    PostgresUploaderConfig,
-    PostgresUploadStagerConfig
-)
-from unstructured.partition.auto import partition
+import os
+import json
+from pathlib import Path
 
+# Import the updated client
+from unstructured_workflow_client import (
+    UnstructuredWorkflowClient,
+    S3SourceConfig,
+    SupabaseDestinationConfig,
+    WorkflowConfig
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,61 +41,61 @@ def get_metadata_includes() -> List[str]:
     ]
 
 
-def create_pipeline_config(
+def create_workflow_config(
     folder: str,
     aws_config: Dict[str, str],
     unstructured_config: Dict[str, str],
     supabase_config: Dict[str, str],
     strategy: str = "hi_res"
-) -> Pipeline:
-    """Create and configure the document processing pipeline
+) -> WorkflowConfig:
+    """Create and configure the document processing workflow
 
     Args:
-        folder (str): S3 folder path to process
-        aws_config (Dict[str, str]): AWS configuration
-        unstructured_config (Dict[str, str]): Unstructured.io configuration
-        supabase_config (Dict[str, str]): Supabase configuration
-        strategy (str): Partitioning strategy to use (auto, fast, hi_res, ocr_only, vlm)
+        folder (str): S3 folder path to process (e.g., s3://bucket/path/)
+        aws_config (Dict[str, str]): AWS configuration with 'key', 'secret', and optional 'token'
+        unstructured_config (Dict[str, str]): Unstructured.io configuration with 'api_key' and 'endpoint'
+        supabase_config (Dict[str, str]): Supabase configuration with 'host', 'port', 'username', 'password', 'database'
+        strategy (str): Processing strategy to use (auto, fast, hi_res, ocr_only, vlm)
 
     Returns:
-        Pipeline: Configured pipeline instance
+        WorkflowConfig: Configured workflow instance
     """
     try:
-        pipeline = Pipeline.from_configs(
-            context=ProcessorConfig(),
-            indexer_config=S3IndexerConfig(remote_url=folder),
-            downloader_config=S3DownloaderConfig(),
-            source_connection_config=S3ConnectionConfig(
-                access_config=S3AccessConfig(
-                    key=aws_config["key"],
-                    secret=aws_config["secret"]
-                )
-            ),
-            partitioner_config=PartitionerConfig(
-                partition_by_api=True,
-                api_key=unstructured_config["api_key"],
-                partition_endpoint=unstructured_config["endpoint"],
-                strategy=strategy,
-                additional_partition_args={
-                    "split_pdf_page": True,
-                    "split_pdf_allow_failed": True,
-                    "split_pdf_concurrency_level": 15
-                }
-            ),
-            chunker_config=ChunkerConfig(chunking_strategy="by_title"),
-            destination_connection_config=PostgresConnectionConfig(
-                access_config=PostgresAccessConfig(password=supabase_config["password"]),
-                host=supabase_config["host"],
-                port=supabase_config["port"],
-                username=supabase_config["username"],
-                database=supabase_config["database"]
-            ),
-            stager_config=PostgresUploadStagerConfig()
+        # Extract bucket and prefix from folder path
+        if not folder.startswith('s3://'):
+            raise ValueError("Folder path must start with 's3://'")
+            
+        # Configure S3 source
+        s3_config = S3SourceConfig(
+            bucket_uri=folder,
+            aws_access_key_id=aws_config.get('key'),
+            aws_secret_access_key=aws_config.get('secret'),
+            aws_session_token=aws_config.get('token'),
+            recursive=True
         )
-        return pipeline
+        
+        # Configure Supabase destination
+        supabase_config = SupabaseDestinationConfig(
+            host=supabase_config['host'],
+            database_name=supabase_config['database'],
+            port=supabase_config.get('port', 5432),
+            username=supabase_config['username'],
+            password=supabase_config['password'],
+            table_name="elements"
+        )
+        
+        # Create workflow config
+        workflow_config = WorkflowConfig(
+            name=f"process_{Path(folder).name or 'root'}",
+            source_config=s3_config,
+            destination_config=supabase_config
+        )
+        
+        return workflow_config
+        
     except Exception as e:
-        logger.error(f"Failed to create pipeline: {str(e)}")
-        raise PipelineError(f"Failed to create pipeline: {str(e)}")
+        logger.error(f"Error creating workflow config: {str(e)}")
+        raise PipelineError(f"Failed to create workflow configuration: {str(e)}")
 
 
 def process_documents(

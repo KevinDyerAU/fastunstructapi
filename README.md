@@ -2,7 +2,7 @@
 
 A document processing API that bridges your data with Unstructured.io's powerful document processing capabilities, enabling seamless integration with AWS S3 and Supabase for scalable document ingestion, processing, and storage.
 
-> **Latest Update (June 2025)**: Added support for Python 3.12.3 and updated deployment configuration for Render.
+> **Latest Update (July 2025)**: Refactored to use the new Unstructured Workflow Client for improved reliability and performance.
 
 ## Overview
 
@@ -18,21 +18,22 @@ Unstructured.io is an award-winning platform recognized as a leader in enterpris
 
 ## Features
 
-- Document ingestion from AWS S3
-- Support for multiple document types (PDF, DOCX, etc.)
-- Configurable chunking and partitioning strategies
-- Secure credential management
-- Async processing support
-- RESTful API endpoints
+- **Document Processing**: Extract structured data from various document formats (PDF, DOCX, etc.)
+- **Workflow-based Processing**: Leverage the new Unstructured Workflow API for reliable document processing
+- **Cloud Storage Integration**: Seamlessly connect with AWS S3 for document storage
+- **Database Support**: Store processed data in Supabase PostgreSQL
+- **RESTful API**: Simple HTTP endpoints for document processing and management
+- **Flexible Configuration**: Environment-based configuration for easy deployment
+- **Scalable Architecture**: Designed to handle both small and large document volumes
 
 ## Setup and Configuration
 
 ### Prerequisites
 
-- Python 3.12.3 (Required for compatibility with dependencies)
-- AWS S3 credentials
+- Python 3.10+ (3.12.3 recommended)
+- AWS S3 credentials (Access Key and Secret Key)
 - Unstructured.io API key
-- Supabase credentials
+- Supabase PostgreSQL connection details
 - Git
 - pip (Python package manager)
 
@@ -88,15 +89,27 @@ This project includes a `render.yaml` file for easy deployment to Render. Follow
 4. **Set up environment variables**:
    Create a `.env` file in the root directory with the following content:
    ```env
-   # AWS S3 Credentials
-   AWS_S3_KEY=your_aws_access_key
-   AWS_S3_SECRET=your_aws_secret_key
-   
-   # Unstructured.io API Key
-   UNSTRUCT_API_KEY=your_unstructured_api_key
-   
-   # Supabase Database Password
-   SUPABASE_PASSWORD=your_supabase_database_password
+   # AWS Configuration
+   AWS_ACCESS_KEY_ID=your_access_key
+   AWS_SECRET_ACCESS_KEY=your_secret_key
+   AWS_SESSION_TOKEN=your_session_token  # Optional, for temporary credentials
+   AWS_REGION=ap-southeast-2  # Default region
+
+   # Unstructured.io Configuration
+   UNSTRUCTURED_API_KEY=your_api_key
+   UNSTRUCTURED_API_URL=https://api.unstructured.io  # Default API endpoint
+
+   # Supabase Configuration
+   SUPABASE_HOST=aws-0-ap-southeast-2.pooler.supabase.com
+   SUPABASE_PORT=5432
+   SUPABASE_USERNAME=postgres.your_username
+   SUPABASE_PASSWORD=your_supabase_password
+   SUPABASE_DATABASE=postgres
+   SUPABASE_TABLE=elements  # Default table name for storing processed elements
+
+   # Application Settings
+   LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+   DEBUG=False  # Set to True for development
    ```
 
 5. **Run the application**:
@@ -109,9 +122,9 @@ This project includes a `render.yaml` file for easy deployment to Render. Follow
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `AWS_S3_KEY` | Yes | AWS S3 access key |
-| `AWS_S3_SECRET` | Yes | AWS S3 secret key |
-| `UNSTRUCT_API_KEY` | Yes | Unstructured.io API key |
+| `AWS_ACCESS_KEY_ID` | Yes | AWS S3 access key |
+| `AWS_SECRET_ACCESS_KEY` | Yes | AWS S3 secret key |
+| `UNSTRUCTURED_API_KEY` | Yes | Unstructured.io API key |
 | `SUPABASE_PASSWORD` | Yes | Supabase database password |
 | `PYTHON_VERSION` | Yes (Render) | Must be set to `3.12.3` |
 | `PYTHONUNBUFFERED` | No | Set to `true` for better logging |
@@ -122,76 +135,34 @@ This project includes a `render.yaml` file for easy deployment to Render. Follow
 
 For production deployments, it's recommended to use Gunicorn with multiple workers. The `render.yaml` file is already configured for this.
 
-### Server Configuration
+### API Endpoints
 
-To run the Flask server locally:
+### Process Documents
 
-```bash
-python wsgi.py
-```
+Process all documents in an S3 folder:
 
-The application will automatically use the port specified in the `PORT` environment variable, defaulting to port 80 if not specified.
+```http
+POST /process
+Content-Type: application/json
 
-Alternatively, you can run the application directly using:
-
-```bash
-python src/main.py
-```
-
-### Environment Variables
-
-The following environment variables must be set:
-
-```bash
-AWS_S3_KEY=your_aws_access_key
-AWS_S3_SECRET=your_aws_secret_key
-UNSTRUCT_API_KEY=your_unstructured_api_key
-SUPABASE_PASSWORD=your_supabase_password
-```
-
-### Installation
-
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## API Endpoints
-
-### Health Check Endpoint
-
-```
-GET /
-```
-
-Returns a health check message:
-
-```json
 {
-    "Message": "app up and running successfully"
+  "folder": "s3://your-bucket/path/to/documents",
+  "strategy": "hi_res"
 }
 ```
 
-### Document Processing Endpoint
-
-```
-POST /access
-```
-
-Process documents from AWS S3 with explicit credentials. This endpoint requires the following JSON payload:
-
+**Response:**
 ```json
 {
-    "fileName": "path/to/file"
+  "message": "Documents processed successfully",
+  "folder": "s3://your-bucket/path/to/documents",
+  "status": "completed",
+  "workflow_id": "workflow_12345",
+  "run_id": "run_67890"
 }
 ```
 
-The following environment variables must be set:
-- `AWS_ACCESS_KEY_ID1`: AWS access key
-- `AWS_SECRET_ACCESS_KEY1`: AWS secret key
-- `UNSTRUCTURED_API_KEY`: Unstructured.io API key
-- `SUPABASE_PASSWORD`: Supabase password
+### Process Single File
 
 Example curl command:
 
