@@ -94,7 +94,7 @@ def process():
     body=FileAccessRequest,
     resp=Response(HTTP_200=ProcessingResponse, HTTP_400=ProcessingResponse)
 )
-async def access():
+def access():
     """Process documents with explicit credentials"""
     try:
         data = request.get_json()
@@ -122,7 +122,7 @@ async def access():
     body=SingleFileRequest,
     resp=Response(HTTP_200=SingleFileResponse, HTTP_400=SingleFileResponse)
 )
-async def process_single():
+def process_single():
     """Process a single file from S3"""
     try:
         data = request.get_json()
