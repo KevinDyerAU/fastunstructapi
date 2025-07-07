@@ -30,9 +30,9 @@ class SupabaseDestinationConfig:
     """Configuration for Supabase (PostgreSQL) destination connector."""
     host: str
     database_name: str
-    port: int = 5432
     username: str
     password: str
+    port: int = 5432
     table_name: str = "elements"
     batch_size: int = 100
 
