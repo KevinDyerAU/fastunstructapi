@@ -18,6 +18,17 @@ logger = logging.getLogger(__name__)
 class Config(BaseSettings):
     """Application configuration settings"""
     
+    def __init__(self, **data):
+        super().__init__(**data)
+        logger.debug("Initializing Config with environment variables:")
+        for field_name, field in self.__fields__.items():
+            env_vars = getattr(field.field_info, 'env_names', [])
+            env_value = None
+            for env_var in env_vars:
+                if env_value is None:
+                    env_value = os.getenv(env_var)
+            logger.debug(f"  {field_name}: {'***' if 'password' in field_name or 'key' in field_name else env_value} (from env: {env_vars})")
+    
     # AWS S3 Configuration
     aws_access_key_id: str = Field(..., env=["AWS_ACCESS_KEY_ID", "AWS_S3_KEY"])
     aws_secret_access_key: str = Field(..., env=["AWS_SECRET_ACCESS_KEY", "AWS_S3_SECRET"])
@@ -105,15 +116,37 @@ def get_supabase_config() -> Dict[str, Any]:
     Returns:
         Dict containing Supabase connection details
     """
-    config = get_config()
-    return {
-        "host": config.supabase_host,
-        "port": config.supabase_port,
-        "username": config.supabase_username,
-        "database": config.supabase_database,
-        "password": config.supabase_password,
-        "table_name": config.supabase_table
-    }
+    try:
+        logger.debug("Loading Supabase configuration...")
+        config = get_config()
+        
+        # Log the actual values being used (safely)
+        supabase_config = {
+            "host": config.supabase_host,
+            "port": config.supabase_port,
+            "username": config.supabase_username,
+            "database": config.supabase_database,
+            "password": "***" if config.supabase_password else None,
+            "table_name": config.supabase_table
+        }
+        
+        logger.debug(f"Supabase config loaded: { {k: '***' if 'password' in k else v for k, v in supabase_config.items()} }")
+        
+        # Verify required fields
+        required_fields = ['host', 'username', 'database', 'password']
+        missing_fields = [field for field in required_fields if not supabase_config.get(field)]
+        
+        if missing_fields:
+            logger.error(f"Missing required Supabase configuration: {', '.join(missing_fields)}")
+            logger.error("Current Supabase config:")
+            for k, v in supabase_config.items():
+                logger.error(f"  {k}: {'***' if 'password' in k else v}")
+        
+        return supabase_config
+        
+    except Exception as e:
+        logger.error(f"Error loading Supabase configuration: {str(e)}", exc_info=True)
+        raise
 
 
 def get_unstructured_config() -> Dict[str, Any]:
