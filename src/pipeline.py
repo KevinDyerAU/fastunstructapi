@@ -119,14 +119,23 @@ def create_workflow_config(
         )
         
         # Configure Supabase destination
-        supabase_config = SupabaseDestinationConfig(
-            host=supabase_config['host'],
-            database_name=supabase_config['database'],
-            port=supabase_config.get('port', 5432),
-            username=supabase_config['username'],
-            password=supabase_config['password'],
-            table_name="elements"
-        )
+        required_keys = ['host', 'username', 'password', 'database']
+        missing_keys = [key for key in required_keys if key not in supabase_config or not supabase_config[key]]
+        
+        if missing_keys:
+            raise ValueError(f"Missing required Supabase configuration: {', '.join(missing_keys)}")
+            
+        try:
+            supabase_config = SupabaseDestinationConfig(
+                host=supabase_config['host'],
+                database_name=supabase_config['database'],
+                port=supabase_config.get('port', 5432),
+                username=supabase_config['username'],
+                password=supabase_config['password'],
+                table_name=supabase_config.get('table_name', 'elements')
+            )
+        except KeyError as e:
+            raise ValueError(f"Invalid Supabase configuration: {str(e)}")
         
         # Create workflow config
         workflow_config = WorkflowConfig(

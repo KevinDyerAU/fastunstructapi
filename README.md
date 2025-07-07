@@ -120,12 +120,35 @@ This project includes a `render.yaml` file for easy deployment to Render. Follow
 
 ### Environment Variables
 
+#### AWS Configuration
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `AWS_ACCESS_KEY_ID` | Yes | AWS S3 access key |
 | `AWS_SECRET_ACCESS_KEY` | Yes | AWS S3 secret key |
+| `AWS_SESSION_TOKEN` | No | AWS session token (for temporary credentials) |
+| `AWS_REGION` | No | AWS region (default: `ap-southeast-2`) |
+
+#### Unstructured.io Configuration
+| Variable | Required | Description |
+|----------|----------|-------------|
 | `UNSTRUCTURED_API_KEY` | Yes | Unstructured.io API key |
+| `UNSTRUCTURED_API_URL` | No | Unstructured.io API endpoint (default: `https://api.unstructured.io`) |
+
+#### Supabase Configuration
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SUPABASE_HOST` | Yes | Supabase database host |
+| `SUPABASE_PORT` | No | Supabase database port (default: `5432`) |
+| `SUPABASE_USERNAME` | Yes | Supabase database username |
 | `SUPABASE_PASSWORD` | Yes | Supabase database password |
+| `SUPABASE_DATABASE` | No | Database name (default: `postgres`) |
+| `SUPABASE_TABLE` | No | Table name for storing elements (default: `elements`) |
+
+#### Application Settings
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `LOG_LEVEL` | No | Logging level (default: `INFO`) |
+| `DEBUG` | No | Enable debug mode (default: `False`) |
 | `PYTHON_VERSION` | Yes (Render) | Must be set to `3.12.3` |
 | `PYTHONUNBUFFERED` | No | Set to `true` for better logging |
 | `PYTHONDONTWRITEBYTECODE` | No | Set to `1` to prevent .pyc files |
