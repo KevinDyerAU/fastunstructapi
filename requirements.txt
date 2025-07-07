@@ -6,7 +6,7 @@ Gunicorn==21.2.0
 uvicorn==0.27.0
 
 # Unstructured client and dependencies
-unstructured-client==0.16.0  # New client for workflow API
+# Using local implementation from updated/ folder
 
 # AWS SDK
 boto3==1.34.21
