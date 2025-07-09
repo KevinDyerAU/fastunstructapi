@@ -1,10 +1,21 @@
 from main import create_app
 import os
+from fastapi import FastAPI
+from fastapi.middleware.wsgi import WSGIMiddleware
 
-app = create_app()
+# Create Flask app
+flask_app = create_app()
+
+# Create FastAPI app that wraps the Flask app
+app = FastAPI()
+app.mount("/", WSGIMiddleware(flask_app))
+
+# This is needed for Render's health checks
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
 
 if __name__ == "__main__":
-    # This block is for local testing with `python wsgi.py`
-    # In production, the WSGI server will import the app directly
+    import uvicorn
     port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)

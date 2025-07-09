@@ -1,6 +1,6 @@
 # FastUnstruct API
 
-A high-performance Flask-based API for processing and extracting structured data from documents using Unstructured.io, with seamless S3 and PostgreSQL integration.
+A high-performance FastAPI-wrapped Flask application for processing and extracting structured data from documents using Unstructured.io, with seamless S3 and PostgreSQL integration. Deployable to Render with zero configuration.
 
 ## ✨ Features
 
@@ -8,8 +8,10 @@ A high-performance Flask-based API for processing and extracting structured data
 - **S3 Integration**: Directly process documents from AWS S3 buckets
 - **PostgreSQL Storage**: Store and query processed data efficiently
 - **RESTful API**: Simple and intuitive API endpoints
+- **Production Ready**: ASGI server with Uvicorn for high performance
+- **Health Checks**: Built-in health check endpoint for monitoring
+- **One-Click Deployment**: Deploy to Render with a single click
 - **Scalable**: Built with production deployment in mind
-- **Container Ready**: Easy Docker deployment
 
 ## 🚀 Quick Start
 
@@ -80,6 +82,32 @@ python main.py
 
 The API will be available at `http://localhost:8080`
 
+## 🚀 Deployment
+
+### Render (Recommended)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/KevinDyerAU/fastunstructapi)
+
+1. Click the "Deploy to Render" button above
+2. Configure your environment variables in the Render dashboard
+3. Deploy!
+
+Required environment variables in Render:
+- `PORT`: The port the app should listen on (set automatically by Render)
+- `AWS_ACCESS_KEY_ID`: Your AWS access key
+- `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
+- `UNSTRUCTURED_API_KEY`: Your Unstructured.io API key
+- `SUPABASE_DATABASE_URL`: Your Supabase PostgreSQL connection string
+- `SUPABASE_PASSWORD`: Your Supabase password
+
+### Manual Deployment
+
+1. Clone the repository
+2. Set up a Python virtual environment
+3. Install dependencies: `pip install -r requirements.txt`
+4. Set environment variables (see Configuration section)
+5. Run with Uvicorn: `uvicorn wsgi:app --host 0.0.0.0 --port $PORT`
+
 ## 🌐 API Endpoints
 
 ### Process a Document
@@ -103,7 +131,12 @@ Content-Type: application/json
 GET /health
 ```
 
-## 🚀 Deployment
+Response:
+```json
+{
+  "status": "ok"
+}
+```
 
 ### Render.com
 
