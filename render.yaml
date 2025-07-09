@@ -1,12 +1,63 @@
-# Exported from Render on 2024-11-23T04:03:01Z
+# Render Blueprint for FastUnstruct API
+# Reference: https://render.com/docs/blueprint-spec
+
 services:
-- type: web
-  name: fastunstructpostgres
-  runtime: python
-  repo: https://github.com/KevinDyerAU/fastunstructapi
-  plan: starter
-  region: singapore
-  buildCommand: pip install -r requirements.txt
-  startCommand: gunicorn wsgi:app --timeout 240
-  autoDeploy: false
+  - type: web
+    name: fastunstruct-api
+    env: python
+    region: singapore  # or choose your preferred region
+    plan: standard  # starter, standard, or pro
+    buildCommand: |
+      pip install --upgrade pip &&
+      pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --worker-class=uvicorn.workers.UvicornWorker --workers=4 --timeout 240
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: true
+      - key: PYTHONPATH
+        value: "."
+      - key: PORT
+        value: 10000
+      - key: FLASK_APP
+        value: "wsgi:app"
+      - key: FLASK_ENV
+        value: production
+      # Add your environment variables in the Render dashboard:
+      # - AWS_ACCESS_KEY_ID
+      # - AWS_SECRET_ACCESS_KEY
+      # - UNSTRUCTURED_API_KEY
+      # - SUPABASE_DATABASE_URL
+      # - SUPABASE_PASSWORD
+
+    # Auto-deploy settings
+    autoDeploy: false  # Set to true for automatic deploys on push to main
+    branch: main  # Branch to deploy from
+
+    # Health check configuration
+    healthCheckPath: /health
+    numRetries: 3
+    
+    # Resource allocation (adjust based on your needs)
+    resources:
+      cpu: 1.0
+      memoryGB: 1
+      ephemeralStorageGB: 1
+
+    # Scaling (for production)
+    scaling:
+      instances: 1  # Start with 1 instance
+      maxInstances: 3  # Scale up to 3 instances under load
+      targetCPUUtilizationPercentage: 60
+      minInstances: 1
+      maxConcurrentRequests: 100
+
+# Uncomment and configure if you need a managed database
+# databases:
+#   - name: fastunstruct-db
+#     databaseName: fastunstruct
+#     user: fastunstruct_user
+#     plan: free  # free, starter, standard, or pro
+#     region: singapore
+#     version: "14"
+
 version: "1"
