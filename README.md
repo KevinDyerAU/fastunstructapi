@@ -1,376 +1,272 @@
-# FastUnstructAPI
+# FastUnstruct API
 
-A document processing API that bridges your data with Unstructured.io's powerful document processing capabilities, enabling seamless integration with AWS S3 and Supabase for scalable document ingestion, processing, and storage.
+A high-performance Flask-based API for processing and extracting structured data from documents using Unstructured.io, with seamless S3 and PostgreSQL integration.
 
-> **Latest Update (July 2025)**: Refactored to use the new Unstructured Workflow Client for improved reliability and performance.
+## ✨ Features
 
-## Overview
+- **Document Processing**: Extract structured data from various document formats
+- **S3 Integration**: Directly process documents from AWS S3 buckets
+- **PostgreSQL Storage**: Store and query processed data efficiently
+- **RESTful API**: Simple and intuitive API endpoints
+- **Scalable**: Built with production deployment in mind
+- **Container Ready**: Easy Docker deployment
 
-FastUnstructAPI is a Flask-based API service that leverages Unstructured.io's industry-leading document processing technology to transform unstructured data into AI-ready formats. The service is designed to:
-
-1. Ingest documents from AWS S3
-2. Process documents using Unstructured.io's advanced document processing pipeline
-3. Store processed data in Supabase PostgreSQL database
-
-### About Unstructured.io
-
-Unstructured.io is an award-winning platform recognized as a leader in enterprise data infrastructure. It helps businesses unlock value from unstructured data by transforming it into a format that large language models can understand. The platform is trusted by Fortune 1000 companies and has been recognized by Fast Company, Forbes AI50, CB Insights AI 100, and Gartner Cool Vendor.
-
-## Features
-
-- **Document Processing**: Extract structured data from various document formats (PDF, DOCX, etc.)
-- **Workflow-based Processing**: Leverage the new Unstructured Workflow API for reliable document processing
-- **Cloud Storage Integration**: Seamlessly connect with AWS S3 for document storage
-- **Database Support**: Store processed data in Supabase PostgreSQL
-- **RESTful API**: Simple HTTP endpoints for document processing and management
-- **Flexible Configuration**: Environment-based configuration for easy deployment
-- **Scalable Architecture**: Designed to handle both small and large document volumes
-
-## Setup and Configuration
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.10+ (3.12.3 recommended)
-- AWS S3 credentials (Access Key and Secret Key)
-- Unstructured.io API key
-- Supabase PostgreSQL connection details
-- Git
+- Python 3.8+
 - pip (Python package manager)
+- AWS credentials (for S3 access)
+- Unstructured.io API key
+- PostgreSQL database (local or Supabase)
 
-### Render Deployment
+## 🛠 Local Development
 
-This project includes a `render.yaml` file for easy deployment to Render. Follow these steps:
-
-1. **Fork this repository** to your GitHub account
-2. **Create a new Web Service** on Render
-3. **Connect your GitHub repository**
-4. **Configure the service**:
-   - Name: `fastunstructapi` (or your preferred name)
-   - Region: Choose the closest to your users
-   - Branch: `main` (or your preferred branch)
-   - Runtime: `Python 3`
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `gunicorn src.main:app --timeout 240`
-   - Plan: `Starter` (or higher for production)
-
-5. **Set environment variables** in the Render dashboard:
-   - `PYTHON_VERSION`: `3.12.3` (Required)
-   - `PYTHONUNBUFFERED`: `true`
-   - `PYTHONDONTWRITEBYTECODE`: `1`
-   - `PYTHONFAULTHANDLER`: `1`
-   
-   #### Required Variables
-   - `AWS_ACCESS_KEY_ID`: Your AWS S3 access key
-   - `AWS_SECRET_ACCESS_KEY`: Your AWS S3 secret key
-   - `UNSTRUCTURED_API_KEY`: Your Unstructured.io API key
-   - `SUPABASE_HOST`: Your Supabase database host
-   - `SUPABASE_USERNAME`: Your Supabase database username
-   - `SUPABASE_PASSWORD`: Your Supabase database password
-   - `SUPABASE_DATABASE`: Your Supabase database name (default: `postgres`)
-   
-   #### Optional Variables
-   - `AWS_SESSION_TOKEN`: (Optional) For temporary AWS credentials
-   - `AWS_REGION`: (Optional) AWS region (default: `ap-southeast-2`)
-   - `SUPABASE_PORT`: (Optional) Database port (default: `5432`)
-   - `SUPABASE_TABLE`: (Optional) Table name (default: `elements`)
-   - `LOG_LEVEL`: (Optional) Logging level (default: `INFO`)
-   - `DEBUG`: (Optional) Set to `True` for debug mode (default: `False`)
-
-6. **Deploy** the application
-
-> **Note**: The application will be available at `https://your-render-app.onrender.com` after deployment.
-
-### Local Development
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/yourusername/fastunstructapi.git
-   cd fastunstructapi
-   ```
-
-2. **Create a virtual environment**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables**:
-   Copy the example environment file and update it with your credentials:
-   
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Then edit the `.env` file with your configuration. Required variables are:
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
-   - `UNSTRUCTURED_API_KEY`
-   - `SUPABASE_HOST`
-   - `SUPABASE_USERNAME`
-   - `SUPABASE_PASSWORD`
-   
-   See the [Environment Variables](#environment-variables) section for all available options.
-   ```env
-   # AWS Configuration
-   AWS_ACCESS_KEY_ID=your_access_key
-   AWS_SECRET_ACCESS_KEY=your_secret_key
-   AWS_SESSION_TOKEN=your_session_token  # Optional, for temporary credentials
-   AWS_REGION=ap-southeast-2  # Default region
-
-   # Unstructured.io Configuration
-   UNSTRUCTURED_API_KEY=your_api_key
-   UNSTRUCTURED_API_URL=https://api.unstructured.io  # Default API endpoint
-
-   # Supabase Configuration
-   SUPABASE_HOST=aws-0-ap-southeast-2.pooler.supabase.com
-   SUPABASE_PORT=5432
-   SUPABASE_USERNAME=postgres.your_username
-   SUPABASE_PASSWORD=your_supabase_password
-   SUPABASE_DATABASE=postgres
-   SUPABASE_TABLE=elements  # Default table name for storing processed elements
-
-   # Application Settings
-   LOG_LEVEL=INFO  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-   DEBUG=False  # Set to True for development
-   ```
-
-5. **Run the application**:
-   ```bash
-   python -m src.main
-   ```
-   The API will be available at `http://localhost:8080`
-
-### Environment Variables
-
-#### AWS Configuration
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `AWS_ACCESS_KEY_ID` | Yes | AWS S3 access key |
-| `AWS_SECRET_ACCESS_KEY` | Yes | AWS S3 secret key |
-| `AWS_SESSION_TOKEN` | No | AWS session token (for temporary credentials) |
-| `AWS_REGION` | No | AWS region (default: `ap-southeast-2`) |
-
-#### Unstructured.io Configuration
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `UNSTRUCTURED_API_KEY` | Yes | Unstructured.io API key |
-| `UNSTRUCTURED_API_URL` | No | Unstructured.io API endpoint (default: `https://api.unstructured.io`) |
-
-#### Supabase Configuration
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `SUPABASE_HOST` | Yes | Supabase database host |
-| `SUPABASE_PORT` | No | Supabase database port (default: `5432`) |
-| `SUPABASE_USERNAME` | Yes | Supabase database username |
-| `SUPABASE_PASSWORD` | Yes | Supabase database password |
-| `SUPABASE_DATABASE` | No | Database name (default: `postgres`) |
-| `SUPABASE_TABLE` | No | Table name for storing elements (default: `elements`) |
-
-#### Application Settings
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `LOG_LEVEL` | No | Logging level (default: `INFO`) |
-| `DEBUG` | No | Enable debug mode (default: `False`) |
-| `PYTHON_VERSION` | Yes (Render) | Must be set to `3.12.3` |
-| `PYTHONUNBUFFERED` | No | Set to `true` for better logging |
-| `PYTHONDONTWRITEBYTECODE` | No | Set to `1` to prevent .pyc files |
-| `PYTHONFAULTHANDLER` | No | Set to `1` for better error reporting |
-
-### Server Configuration
-
-For production deployments, it's recommended to use Gunicorn with multiple workers. The `render.yaml` file is already configured for this.
-
-### Troubleshooting
-
-#### Environment Variables Not Loading
-If you're seeing errors about missing configuration:
-1. Verify all required environment variables are set
-2. Check for typos in variable names
-3. For local development, ensure the `.env` file is in the root directory
-4. Restart your application after changing environment variables
-
-#### Common Issues
-- **Missing Supabase Configuration**: Ensure all required Supabase variables are set
-- **AWS Credentials Error**: Verify your AWS credentials have the correct permissions
-- **API Connection Issues**: Check your internet connection and API endpoint URLs
-
-#### Debugging
-To enable debug logging, set:
-```bash
-export LOG_LEVEL=DEBUG
-# On Windows:
-# set LOG_LEVEL=DEBUG
-```
-
-### Running Tests
-
-To run the test suite:
+### 1. Clone the repository
 
 ```bash
-# Install test dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest tests/
+git clone https://github.com/KevinDyerAU/fastunstructapi.git
+cd fastunstructapi
 ```
 
-### Development
+### 2. Set up a virtual environment
 
-For local development with automatic reloading:
+#### Windows:
+```bash
+python -m venv venv
+.\venv\Scripts\activate
+```
+
+#### macOS/Linux:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install dependencies
 
 ```bash
-uvicorn src.main:app --reload
+pip install -r requirements.txt
 ```
 
-The API will be available at `http://localhost:8000`
+### 4. Configure environment variables
 
-### API Endpoints
+Create a `.env` file in the root directory with the following variables:
 
-### Process Documents
+```env
+# Flask Configuration
+FLASK_APP=wsgi:app
+FLASK_ENV=development
+PORT=8080
 
-Process all documents in an S3 folder:
+# AWS Configuration
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+
+# Unstructured.io Configuration
+UNSTRUCTURED_API_KEY=your_unstructured_api_key
+
+# PostgreSQL Configuration (Supabase)
+SUPABASE_DATABASE_URL=postgresql://user:password@host:port/dbname
+SUPABASE_PASSWORD=your_supabase_password
+```
+
+### 5. Run the development server
+
+```bash
+python main.py
+```
+
+The API will be available at `http://localhost:8080`
+
+## 🌐 API Endpoints
+
+### Process a Document
 
 ```http
 POST /process
 Content-Type: application/json
 
 {
-  "folder": "s3://your-bucket/path/to/documents",
-  "strategy": "hi_res"
+  "fileName": "path/to/document.pdf",
+  "awsK": "your_aws_key",
+  "awsS": "your_aws_secret",
+  "unstrK": "your_unstructured_key",
+  "supaK": "your_supabase_key"
 }
 ```
 
-**Response:**
-```json
-{
-  "message": "Documents processed successfully",
-  "folder": "s3://your-bucket/path/to/documents",
-  "status": "completed",
-  "workflow_id": "workflow_12345",
-  "run_id": "run_67890"
-}
+### Health Check
+
+```http
+GET /health
 ```
 
-### Process Single File
+## 🚀 Deployment
 
-Example curl command:
+### Render.com
+
+1. Fork this repository
+2. Create a new Web Service on Render
+3. Connect your GitHub repository
+4. Use the following settings:
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn wsgi:app --worker-class=uvicorn.workers.UvicornWorker --workers=4 --timeout 240`
+5. Add the required environment variables
+6. Deploy!
+
+### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `AWS_ACCESS_KEY_ID` | AWS access key | Yes |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key | Yes |
+| `UNSTRUCTURED_API_KEY` | Unstructured.io API key | Yes |
+| `SUPABASE_DATABASE_URL` | PostgreSQL connection URL | Yes |
+| `SUPABASE_PASSWORD` | PostgreSQL password | Yes |
+| `PORT` | Port to run the server on | No (default: 8080) |
+| `FLASK_ENV` | Environment (development/production) | No (default: production) |
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Character Encoding Errors**
+   - Ensure your terminal supports UTF-8
+   - Set `PYTHONIOENCODING=utf-8` in your environment
+
+2. **S3 Connection Issues**
+   - Verify your AWS credentials
+   - Check S3 bucket permissions
+
+3. **PostgreSQL Connection Issues**
+   - Verify database credentials
+   - Check if the database is accessible from your network
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Unstructured.io](https://unstructured.io/) for the amazing document processing library
+- [Flask](https://flask.palletsprojects.com/) for the web framework
+- [Render](https://render.com/) for the hosting platform
 
 ```bash
-# Replace YOUR_API_URL with your deployed API URL
-# Replace YOUR_FILE_PATH with the S3 path to your file
-curl -X POST YOUR_API_URL/access \
-  -H "Content-Type: application/json" \
-  -d '{"fileName": "YOUR_FILE_PATH"}'
+# On Windows
+python -m venv venv
+.\venv\Scripts\activate
+
+# On macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-Example response:
+### 3. Install dependencies
 
-```json
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Set up environment variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+FLASK_APP=main.py
+FLASK_ENV=development
+AWS_ACCESS_KEY_ID=your_aws_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret
+UNSTRUCTURED_API_KEY=your_unstructured_key
+POSTGRES_PASSWORD=your_postgres_password
+```
+
+### 5. Run the application
+
+```bash
+# Development server
+python main.py
+
+# Or using Gunicorn for production-like environment
+gunicorn wsgi:app
+```
+
+The API will be available at `http://localhost:8080`
+
+## API Endpoints
+
+### Process a file
+
+```http
+POST /process
+Content-Type: application/json
+
 {
-    "Message": "Filename YOUR_FILE_PATH received and processed"
+  "fileName": "path/to/your/file.pdf",
+  "awsK": "your_aws_key",
+  "awsS": "your_aws_secret",
+  "unstrK": "your_unstructured_key",
+  "supaK": "your_supabase_key"
 }
 ```
 
-### Available Parsing Strategies
+### Check API status
 
-The API supports several parsing strategies for document processing, each with different performance characteristics and cost implications:
+```http
+GET /
+```
 
-#### `auto` (Default)
-- **Description**: Automatically selects the most appropriate strategy based on document characteristics
-- **Performance**: Optimized for a balance of speed and accuracy
-- **Cost**: Variable - depends on the automatically chosen strategy
-- **Use Case**: General purpose when you're unsure which strategy to use
-- **Best For**: Most standard documents where you want a good balance of performance and accuracy
+## Deployment to Render
 
-#### `fast`
-- **Description**: Uses rule-based techniques for quick text extraction
-- **Performance**: Fastest option with lowest computational requirements
-- **Cost**: Lowest cost option
-- **Limitations**: Not suitable for image-based files or complex layouts
-- **Best For**: Simple text documents with extractable text where speed is critical
+### 1. Create a new Web Service
 
-#### `hi_res` (High Resolution)
-- **Description**: Uses advanced models to identify document layout and elements
-- **Performance**: Slower but provides highest accuracy for complex documents
-- **Cost**: Higher computational cost due to advanced model inference
-- **Best For**: Documents with complex layouts where accurate element identification is crucial
-- **Note**: Falls back to `ocr_only` if the required models are not available
+1. Go to your Render dashboard and click "New +" then select "Web Service"
+2. Connect your Git repository
 
-#### `ocr_only`
-- **Description**: Uses Optical Character Recognition (OCR) for text extraction
-- **Performance**: Slower than `fast` but necessary for image-based content
-- **Cost**: Moderate - requires OCR processing
-- **Best For**: Scanned documents or images containing text
-- **Note**: Falls back to `fast` if Tesseract is not available and text is extractable
+### 2. Configure the service
 
-#### `vlm` (Vision Language Model)
-- **Description**: Uses vision language models for image-based files
-- **Performance**: Slowest option due to complex model inference
-- **Cost**: Highest cost option - requires significant computational resources
-- **Supported Formats**: .bmp, .gif, .heic, .jpeg, .jpg, .pdf, .png, .tiff, .webp
-- **Best For**: Complex image-based documents where maximum accuracy is required
+- **Name**: fastunstructapi (or your preferred name)
+- **Region**: Choose the closest region to your users
+- **Branch**: main (or your preferred branch)
+- **Root Directory**: / (root of the repository)
+- **Build Command**: `pip install -r requirements.txt`
+- **Start Command**: `gunicorn wsgi:app`
 
-### Cost and Performance Summary
+### 3. Set up environment variables
 
-| Strategy | Speed | Cost | Best For |
-|----------|-------|------|----------|
-| `auto`   | Fast to Medium | Low to Medium | General purpose, most documents |
-| `fast`   | Fastest | Lowest | Simple text documents with extractable text |
-| `hi_res` | Slower | Higher | Complex layouts, accurate element identification |
-| `ocr_only` | Medium | Medium | Scanned documents, image-based text |
-| `vlm`    | Slowest | Highest | Complex image-based documents requiring maximum accuracy |
+Add the following environment variables in the Render dashboard:
 
-> **Note**: The actual cost will depend on your deployment environment and usage patterns. For high-volume processing, consider starting with `fast` and only using more expensive strategies when necessary.
+- `FLASK_APP=main.py`
+- `FLASK_ENV=production`
+- `AWS_ACCESS_KEY_ID`: Your AWS access key
+- `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
+- `UNSTRUCTURED_API_KEY`: Your Unstructured.io API key
+- `POSTGRES_PASSWORD`: Your PostgreSQL password
+
+### 4. Deploy
+
+Click "Create Web Service" to deploy your application.
 
 ## Project Structure
 
 ```
 fastunstructapi/
-├── src/
-│   ├── __init__.py
-│   ├── config.py
-│   ├── main.py
-│   └── pipeline.py
-├── requirements.txt
-└── README.md
+├── main.py           # Main application code
+├── wsgi.py          # WSGI entry point for production
+├── requirements.txt  # Python dependencies
+└── README.md        # This file
 ```
-
-## Development
-
-Run the development server:
-
-```bash
-python -m src.main
-```
-
-## Deployment
-
-The application can be deployed using Gunicorn:
-
-```bash
-gunicorn -w 4 -k uvicorn.workers.UvicornWorker src.main:app
-```
-
-## Security
-
-- All sensitive credentials are managed through environment variables
-- No hardcoded credentials in the codebase
-- Input validation is enforced
-- Error handling is implemented
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT
