@@ -6,7 +6,13 @@ This folder contains all project documentation, guides, and development notes.
 
 ### Guides & References
 
-- **[STRATEGY_OPTIONS.md](STRATEGY_OPTIONS.md)** - Complete guide to all 5 partitioning strategies (NEW!)
+- **[METADATA_CAPTURE.md](METADATA_CAPTURE.md)** - Comprehensive metadata capture guide (NEW!)
+  - Filename and page number tracking
+  - All captured metadata fields
+  - Configuration for maximum accuracy
+  - Supabase schema and queries
+
+- **[STRATEGY_OPTIONS.md](STRATEGY_OPTIONS.md)** - Complete guide to all 5 partitioning strategies
   - Detailed strategy descriptions
   - Use case recommendations
   - Comparison matrix

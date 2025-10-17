@@ -9,6 +9,7 @@ A production-ready Flask API for processing unstructured documents using **Unstr
 - **🎯 Configurable Strategies**: Choose between hi_res, fast, or auto partitioning (default: hi_res)
 - **🔍 Advanced Partitioning**: Hi-res document partitioning with table structure inference
 - **✂️ Smart Chunking**: By-title chunking strategy with multipage sections
+- **📋 Comprehensive Metadata**: Captures filename, page numbers, coordinates, and document structure
 - **☁️ S3 Integration**: Dynamic S3 source connectors for AWS document access
 - **🗄️ PostgreSQL/Supabase**: Automated destination connectors for data storage
 - **🌐 RESTful API**: Simple and intuitive API endpoints
@@ -440,6 +441,8 @@ pytest --cov=main tests/
 - **PostgreSQL Destination**: [docs.unstructured.io/api-reference/workflow/destinations/postgresql](https://docs.unstructured.io/api-reference/workflow/destinations/postgresql)
 
 ### Project Documentation
+- **Metadata Capture Guide**: [docs/METADATA_CAPTURE.md](docs/METADATA_CAPTURE.md) - Complete metadata tracking guide (filename, page numbers, etc.)
+- **Strategy Options**: [docs/STRATEGY_OPTIONS.md](docs/STRATEGY_OPTIONS.md) - All 5 partitioning strategies explained
 - **Migration Guide**: [docs/MIGRATION_SUMMARY.md](docs/MIGRATION_SUMMARY.md) - Detailed migration information
 - **README Update Notes**: [docs/README_UPDATE_SUMMARY.md](docs/README_UPDATE_SUMMARY.md) - Changelog for documentation
 - **Supabase Integration**: [docs/supabase-notes.txt](docs/supabase-notes.txt) - Supabase setup and integration notes

@@ -198,15 +198,28 @@ async def start_pipeline(
         destination_id = destination_response.destination_connector_information.id
         logger.info(f"Created PostgreSQL destination connector: {destination_id}")
         
-        # Step 3: Define workflow nodes
+        # Step 3: Define workflow nodes with comprehensive metadata capture
         partitioner_node = WorkflowNode(
             name="Partitioner",
             type="partition",
             subtype="unstructured_api",
             settings={
+                # Strategy configuration
                 "strategy": strategy,
+                
+                # Table and structure detection
                 "pdf_infer_table_structure": True,
-                "include_page_breaks": True
+                "include_page_breaks": True,
+                
+                # Metadata capture settings
+                "coordinates": True,  # Capture element coordinates for position tracking
+                "extract_image_block_types": ["Image", "Table"],  # Extract visual elements
+                
+                # Language detection for international documents
+                "languages": ["eng"],  # Primary language, auto-detects others
+                
+                # Ensure unique IDs for tracking elements
+                "unique_element_ids": True,
             }
         )
         
@@ -215,8 +228,14 @@ async def start_pipeline(
             type="chunk",
             subtype="chunk_by_title",
             settings={
-                "include_orig_elements": False,
-                "multipage_sections": True
+                # Preserve metadata through chunking
+                "include_orig_elements": True,  # Keep original element metadata
+                "multipage_sections": True,  # Allow chunks to span pages
+                
+                # Maintain parent-child relationships
+                "max_characters": 1500,  # Optimal chunk size
+                "new_after_n_chars": 1000,  # Start new chunk after N chars
+                "overlap": 100,  # Character overlap between chunks for context
             }
         )
         
