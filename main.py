@@ -1,73 +1,127 @@
-"""Main application module for the FastUnstruct API."""
-from flask import Flask, jsonify, request
-from unstructured_ingest.pipeline.pipeline import Pipeline
-from unstructured_ingest.interfaces import ProcessorConfig
-from unstructured_ingest.processes.connectors.fsspec.s3 import (
-    S3IndexerConfig,
-    S3DownloaderConfig,
-    S3ConnectionConfig,
-    S3AccessConfig
+"""Main application module for the FastUnstruct API.
+
+This module provides a Flask API for processing unstructured documents
+using the Unstructured Workflow Endpoint with S3 and PostgreSQL/Supabase integration.
+"""
+import os
+import sys
+import signal
+import platform
+import time
+import logging
+from typing import Dict, Any, Tuple
+
+from flask import Flask, request
+from unstructured_client import UnstructuredClient
+from unstructured_client.models.shared import (
+    CreateSourceConnector,
+    CreateDestinationConnector,
+    CreateWorkflow,
+    WorkflowNode,
+    WorkflowType
 )
-from unstructured_ingest.processes.partitioner import PartitionerConfig
-from unstructured_ingest.processes.chunker import ChunkerConfig
-from unstructured_ingest.processes.connectors.sql.postgres import (
-    PostgresConnectionConfig,
-    PostgresAccessConfig,
-    PostgresUploadStagerConfig,
-    PostgresUploaderConfig
+from unstructured_client.models.operations import (
+    CreateSourceRequest,
+    CreateDestinationRequest,
+    CreateWorkflowRequest,
+    RunWorkflowRequest
 )
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Constants
+VALID_STRATEGIES = {"auto", "fast", "hi_res", "ocr_only", "vlm"}
+DEFAULT_STRATEGY = "hi_res"  # Best for complex documents with tables
+DEFAULT_PORT = 8080
+DEFAULT_BATCH_SIZE = 100
+
+# Supabase Configuration
+SUPABASE_HOST = "aws-0-ap-southeast-2.pooler.supabase.com"
+SUPABASE_PORT = 6543
+SUPABASE_USERNAME = "postgres.nwwqkubrlvmrycubylso"
+SUPABASE_DATABASE = "postgres"
+SUPABASE_TABLE = "elements"
 
 app = Flask(__name__)
 
 @app.route("/")
-def root() -> dict:
+def root() -> Dict[str, str]:
     """Root endpoint to check if the application is running.
     
     Returns:
-        dict: A simple status message
+        dict: Status message indicating the API is operational
     """
     return {"status": "success", "message": "FastUnstruct API is running"}
 
-# Chunking and embedding are optional.
+
 @app.route("/process", methods=["POST"])
-async def process_file() -> dict:
-    """Process a file from the provided parameters.
+async def process_file() -> Tuple[Dict[str, Any], int]:
+    """Process documents from S3 using Unstructured Workflow Endpoint.
     
     Expected JSON payload:
-        - fileName: Name of the file to process
-        - awsK: AWS access key
-        - awsS: AWS secret key
-        - unstrK: Unstructured API key
-        - supaK: Supabase API key
+        - fileName (str): S3 path to process (e.g., s3://bucket/path/)
+        - awsK (str): AWS access key
+        - awsS (str): AWS secret key
+        - unstrK (str): Unstructured API key
+        - supaK (str): Supabase password
+        - strategy (str, optional): Partitioning strategy (default: "hi_res")
+          Options: "auto", "fast", "hi_res", "ocr_only", "vlm"
         
     Returns:
-        dict: Status message with the result of the operation
+        tuple: (dict, status_code) containing result message and HTTP status
     """
     try:
         data = request.get_json()
-        required_fields = ["fileName", "awsK", "awsS", "unstrK", "supaK"]
+        if not data:
+            return {"status": "error", "message": "No JSON payload provided"}, 400
         
-        if not all(field in data for field in required_fields):
-            return {"status": "error", "message": "Missing required fields"}, 400
+        # Validate required fields
+        required_fields = ["fileName", "awsK", "awsS", "unstrK", "supaK"]
+        missing_fields = [field for field in required_fields if field not in data]
+        
+        if missing_fields:
+            return {
+                "status": "error",
+                "message": f"Missing required fields: {', '.join(missing_fields)}"
+            }, 400
             
         file_name = data["fileName"]
+        strategy = data.get("strategy", DEFAULT_STRATEGY)
+        
+        # Validate strategy parameter
+        if strategy not in VALID_STRATEGIES:
+            return {
+                "status": "error",
+                "message": f"Invalid strategy '{strategy}'. Must be one of: {', '.join(VALID_STRATEGIES)}"
+            }, 400
+        
+        logger.info(f"Processing request for: {file_name} with strategy: {strategy}")
         
         await start_pipeline(
             folder=file_name,
             aws_key=data["awsK"],
             aws_secret=data["awsS"],
             unstructured_key=data["unstrK"],
-            supabase_key=data["supaK"]
+            supabase_key=data["supaK"],
+            strategy=strategy
         )
         
         return {
             "status": "success",
-            "message": f"File {file_name} processed successfully"
-        }
+            "message": f"Workflow started for {file_name} with {strategy} strategy"
+        }, 200
         
+    except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
+        return {"status": "error", "message": str(e)}, 400
     except Exception as e:
-        return {"status": "error", "message": str(e)}, 500
-
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        return {"status": "error", "message": f"Internal server error: {str(e)}"}, 500
 
 
 async def start_pipeline(
@@ -75,110 +129,172 @@ async def start_pipeline(
     aws_key: str,
     aws_secret: str,
     unstructured_key: str,
-    supabase_key: str
+    supabase_key: str,
+    strategy: str = DEFAULT_STRATEGY
 ) -> None:
-    """Start the processing pipeline for the given file.
+    """Start the processing workflow using Unstructured Workflow Endpoint.
+    
+    Creates source and destination connectors, defines workflow nodes,
+    and executes the workflow as an asynchronous job.
     
     Args:
-        folder: The folder path to process
-        aws_key: AWS access key
-        aws_secret: AWS secret key
-        unstructured_key: Unstructured API key
-        supabase_key: Supabase API key
+        folder: S3 folder path to process (e.g., s3://bucket-name/path/)
+        aws_key: AWS access key for S3
+        aws_secret: AWS secret access key
+        unstructured_key: Unstructured API key from platform.unstructured.io
+        supabase_key: Supabase PostgreSQL password
+        strategy: Partitioning strategy ("hi_res", "fast", or "auto")
+        
+    Raises:
+        Exception: If workflow creation or execution fails
     """
-    # Metadata fields to include in the output
-    metadata_fields = [
-        # Core identification
-        "id", "element_id", "type", "filename", "filetype",
-        
-        # Basic metadata
-        "date_created", "date_modified", "page_number", "file_directory",
-        
-        # Content analysis
-        "languages", "section", "category_depth",
-        
-        # Add these back if needed
-        # "layout_width", "layout_height", "points", "header_footer_type",
-        # "version", "system", "permissions_data", "record_locator",
-        # "sent_from", "sent_to", "subject", "link_urls", "link_texts",
-        # "emphasized_text_contents", "emphasized_text_tags", "text_as_html",
-        # "regex_metadata", "detection_class_prob"
-    ]
-
-    # Configure and start the pipeline
-    Pipeline.from_configs(
-        context=ProcessorConfig(),
-        indexer_config=S3IndexerConfig(remote_url=folder),
-        downloader_config=S3DownloaderConfig(),
-        source_connection_config=S3ConnectionConfig(
-            access_config=S3AccessConfig(
-                key=aws_key,
-                secret=aws_secret
-            )
-        ),
-        partitioner_config=PartitionerConfig(
-            partition_by_api=True,
-            api_key=unstructured_key,
-            partition_endpoint='https://api.unstructuredapp.io/general/v0/general',
-            strategy="hi_res",
-            additional_partition_args={
-                "split_pdf_page": True,
-                "split_pdf_allow_failed": True,
-                "split_pdf_concurrency_level": 15
-            }
-        ),
-        chunker_config=ChunkerConfig(chunking_strategy="by_title"),
-        destination_connection_config=PostgresConnectionConfig(
-            access_config=PostgresAccessConfig(password=supabase_key),
-            host='aws-0-ap-southeast-2.pooler.supabase.com',
-            port='6543',
-            username='postgres.nwwqkubrlvmrycubylso',
-            database='postgres'
-        ),
-        stager_config=PostgresUploadStagerConfig(),
-        uploader_config=PostgresUploaderConfig()
-    ).run()
+    client = UnstructuredClient(api_key_auth=unstructured_key)
     
+    # Generate unique names with timestamp
+    timestamp = int(time.time())
+    source_name = f"s3-source-{timestamp}"
+    destination_name = f"supabase-dest-{timestamp}"
+    workflow_name = f"workflow-{timestamp}"
+    
+    logger.info(f"Initializing workflow: {workflow_name}")
+    
+    try:
+        # Step 1: Create S3 source connector
+        source_response = client.sources.create_source(
+            request=CreateSourceRequest(
+                create_source_connector=CreateSourceConnector(
+                    name=source_name,
+                    type="s3",
+                    config={
+                        "key": aws_key,
+                        "secret": aws_secret,
+                        "remote_url": folder,
+                        "recursive": True
+                    }
+                )
+            )
+        )
+        source_id = source_response.source_connector_information.id
+        logger.info(f"Created S3 source connector: {source_id}")
+        
+        # Step 2: Create PostgreSQL/Supabase destination connector
+        destination_response = client.destinations.create_destination(
+            request=CreateDestinationRequest(
+                create_destination_connector=CreateDestinationConnector(
+                    name=destination_name,
+                    type="postgres",
+                    config={
+                        "host": SUPABASE_HOST,
+                        "port": SUPABASE_PORT,
+                        "username": SUPABASE_USERNAME,
+                        "database": SUPABASE_DATABASE,
+                        "password": supabase_key,
+                        "table_name": SUPABASE_TABLE,
+                        "batch_size": DEFAULT_BATCH_SIZE
+                    }
+                )
+            )
+        )
+        destination_id = destination_response.destination_connector_information.id
+        logger.info(f"Created PostgreSQL destination connector: {destination_id}")
+        
+        # Step 3: Define workflow nodes
+        partitioner_node = WorkflowNode(
+            name="Partitioner",
+            type="partition",
+            subtype="unstructured_api",
+            settings={
+                "strategy": strategy,
+                "pdf_infer_table_structure": True,
+                "include_page_breaks": True
+            }
+        )
+        
+        chunker_node = WorkflowNode(
+            name="Chunker",
+            type="chunk",
+            subtype="chunk_by_title",
+            settings={
+                "include_orig_elements": False,
+                "multipage_sections": True
+            }
+        )
+        
+        logger.info(f"Configured partitioner with {strategy} strategy")
+        
+        # Step 4: Create workflow
+        workflow_response = client.workflows.create_workflow(
+            request=CreateWorkflowRequest(
+                create_workflow=CreateWorkflow(
+                    name=workflow_name,
+                    source_id=source_id,
+                    destination_id=destination_id,
+                    workflow_type=WorkflowType.BATCH,
+                    workflow_nodes=[
+                        partitioner_node,
+                        chunker_node
+                    ]
+                )
+            )
+        )
+        workflow_id = workflow_response.workflow_information.id
+        logger.info(f"Created workflow: {workflow_id}")
+        
+        # Step 5: Run the workflow
+        job_response = client.workflows.run_workflow(
+            request=RunWorkflowRequest(
+                workflow_id=workflow_id
+            )
+        )
+        job_id = job_response.job_information.id
+        logger.info(f"Started job: {job_id}")
+        logger.info(f"Monitor job at: https://platform.unstructured.io")
+        
+    except Exception as e:
+        logger.error(f"Workflow execution failed: {str(e)}", exc_info=True)
+        raise
 
-def create_app():
+def create_app() -> Flask:
+    """Create and configure the Flask application.
+    
+    Returns:
+        Flask: Configured Flask application instance
+    """
     return app
 
+
 if __name__ == "__main__":
-    import os
-    import sys
-    import signal
-    import platform
-    
-    # Default to port 8080 for local development
-    port = int(os.environ.get('PORT', 8080))
+    # Get port from environment or use default
+    port = int(os.environ.get('PORT', DEFAULT_PORT))
     
     def signal_handler(sig, frame):
-        print('\nShutting down server...')
+        """Handle shutdown signals gracefully."""
+        logger.info('Shutting down server...')
         sys.exit(0)
     
     # Register signal handlers for clean shutdown
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
+    logger.info(f"Starting FastUnstruct API on port {port}")
+    
     try:
-        # Use threaded=False to avoid issues on Windows
         app.run(
             host='0.0.0.0',
             port=port,
             debug=True,
             threaded=False,
-            use_reloader=False  # Disable reloader to avoid issues with Windows
+            use_reloader=False
         )
     except PermissionError:
-        print(f"Error: Port {port} requires administrator privileges. Try a port number above 1024.")
+        logger.error(f"Port {port} requires administrator privileges. Try a port above 1024.")
         sys.exit(1)
     except OSError as e:
-        if platform.system() == 'Windows' and e.winerror == 10038:
-            print("\nServer stopped. This is a known issue on Windows when stopping the server.")
-            print("You can safely ignore this message if you stopped the server intentionally.")
+        if platform.system() == 'Windows' and hasattr(e, 'winerror') and e.winerror == 10038:
+            logger.info("Server stopped (Windows shutdown behavior - can be safely ignored)")
         else:
-            print(f"\nError starting server: {e}")
+            logger.error(f"Error starting server: {e}")
         sys.exit(1)
     except Exception as e:
-        print(f"\nUnexpected error: {e}")
+        logger.error(f"Unexpected error: {e}", exc_info=True)
         sys.exit(1)
